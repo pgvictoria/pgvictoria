@@ -1,0 +1,8 @@
+.bundle/
+_site/
+build/
+vendor/
+.vscode/
+.cache
+*.uncrustify
+.DS_Store
