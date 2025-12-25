@@ -20,8 +20,7 @@
 ## Tested platforms
 
 * [Fedora](https://getfedora.org/) 42+
-* [RHEL 9.x](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9)
-* [Rocky Linux 9.x](https://rockylinux.org/)
+* [Rocky Linux 10.x](https://rockylinux.org/)
 * [FreeBSD](https://www.freebsd.org/)
 
 ## Compiling the source
@@ -90,7 +89,7 @@ community.
 
 Consider giving the project a [star](https://github.com/pgvictoria/pgvictoria/stargazers) on
 [GitHub](https://github.com/pgvictoria/pgvictoria/) if you find it useful. And, feel free to follow
-the project on [X](https://x.com/pgvictoria/) as well.
+the project on X as well.
 
 ## License
 
