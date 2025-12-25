@@ -38,7 +38,7 @@
 * [texlive](https://www.tug.org/texlive/)
 
 ```sh
-dnf install git gcc clang clang-analyzer cmake make libev libev-devel openssl openssl-devel python3-docutils libatomic libasan libasan-static
+dnf install git gcc clang clang-analyzer clang-tools-extra cmake make libev libev-devel openssl openssl-devel python3-docutils libatomic libasan libasan-static
 ```
 
 Alternative [gcc](https://gcc.gnu.org) can be used.
