@@ -56,11 +56,11 @@
 
 #include <openssl/crypto.h>
 
-#define NAME "main"
-#define MAX_FDS 64
+#define NAME           "main"
+#define MAX_FDS        64
 #define SIGNALS_NUMBER 6
 
-static int  create_pidfile(void);
+static int create_pidfile(void);
 static void remove_pidfile(void);
 
 struct accept_io
@@ -439,7 +439,6 @@ create_pidfile(void)
 
    if (strlen(config->pidfile) > 0)
    {
-
       // check pidfile is not there
       if (access(config->pidfile, F_OK) == 0)
       {

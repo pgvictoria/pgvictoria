@@ -38,47 +38,47 @@ extern "C" {
 
 #include <stdlib.h>
 
-#define PGVICTORIA_MAIN_INI_SECTION                  "pgvictoria"
-#define PGVICTORIA_DEFAULT_CONFIG_FILE_PATH          "/etc/pgvictoria/pgvictoria.conf"
-#define PGVICTORIA_DEFAULT_USERS_FILE_PATH           "/etc/pgvictoria/pgvictoria_users.conf"
+#define PGVICTORIA_MAIN_INI_SECTION         "pgvictoria"
+#define PGVICTORIA_DEFAULT_CONFIG_FILE_PATH "/etc/pgvictoria/pgvictoria.conf"
+#define PGVICTORIA_DEFAULT_USERS_FILE_PATH  "/etc/pgvictoria/pgvictoria_users.conf"
 
 /* Main configuration fields */
-#define CONFIGURATION_ARGUMENT_ENCRYPTION             "encryption"
-#define CONFIGURATION_ARGUMENT_HOST                   "host"
-#define CONFIGURATION_ARGUMENT_HUGEPAGE               "hugepage"
-#define CONFIGURATION_ARGUMENT_LIBEV                  "libev"
-#define CONFIGURATION_ARGUMENT_LOG_LEVEL              "log_level"
-#define CONFIGURATION_ARGUMENT_LOG_LINE_PREFIX        "log_line_prefix"
-#define CONFIGURATION_ARGUMENT_LOG_MODE               "log_mode"
-#define CONFIGURATION_ARGUMENT_LOG_PATH               "log_path"
-#define CONFIGURATION_ARGUMENT_LOG_ROTATION_AGE       "log_rotation_age"
-#define CONFIGURATION_ARGUMENT_LOG_ROTATION_SIZE      "log_rotation_size"
-#define CONFIGURATION_ARGUMENT_LOG_TYPE               "log_type"
-#define CONFIGURATION_ARGUMENT_MAIN_CONF_PATH         "main_configuration_path"
-#define CONFIGURATION_ARGUMENT_PIDFILE                "pidfile"
-#define CONFIGURATION_ARGUMENT_PORT                   "port"
-#define CONFIGURATION_ARGUMENT_UNIX_SOCKET_DIR        "unix_socket_dir"
-#define CONFIGURATION_ARGUMENT_UPDATE_PROCESS_TITLE   "update_process_title"
-#define CONFIGURATION_ARGUMENT_USER                   "user"
-#define CONFIGURATION_ARGUMENT_USER_CONF_PATH         "users_configuration_path"
-#define CONFIGURATION_ARGUMENT_SERVER                 "server"
+#define CONFIGURATION_ARGUMENT_ENCRYPTION           "encryption"
+#define CONFIGURATION_ARGUMENT_HOST                 "host"
+#define CONFIGURATION_ARGUMENT_HUGEPAGE             "hugepage"
+#define CONFIGURATION_ARGUMENT_LIBEV                "libev"
+#define CONFIGURATION_ARGUMENT_LOG_LEVEL            "log_level"
+#define CONFIGURATION_ARGUMENT_LOG_LINE_PREFIX      "log_line_prefix"
+#define CONFIGURATION_ARGUMENT_LOG_MODE             "log_mode"
+#define CONFIGURATION_ARGUMENT_LOG_PATH             "log_path"
+#define CONFIGURATION_ARGUMENT_LOG_ROTATION_AGE     "log_rotation_age"
+#define CONFIGURATION_ARGUMENT_LOG_ROTATION_SIZE    "log_rotation_size"
+#define CONFIGURATION_ARGUMENT_LOG_TYPE             "log_type"
+#define CONFIGURATION_ARGUMENT_MAIN_CONF_PATH       "main_configuration_path"
+#define CONFIGURATION_ARGUMENT_PIDFILE              "pidfile"
+#define CONFIGURATION_ARGUMENT_PORT                 "port"
+#define CONFIGURATION_ARGUMENT_UNIX_SOCKET_DIR      "unix_socket_dir"
+#define CONFIGURATION_ARGUMENT_UPDATE_PROCESS_TITLE "update_process_title"
+#define CONFIGURATION_ARGUMENT_USER                 "user"
+#define CONFIGURATION_ARGUMENT_USER_CONF_PATH       "users_configuration_path"
+#define CONFIGURATION_ARGUMENT_SERVER               "server"
 
-#define CONFIGURATION_TYPE_MAIN 0
-#define CONFIGURATION_TYPE_WALINFO 1
+#define CONFIGURATION_TYPE_MAIN                     0
+#define CONFIGURATION_TYPE_WALINFO                  1
 
 // Set configuration argument constants
-#define CONFIGURATION_RESPONSE_STATUS                           "status"
-#define CONFIGURATION_RESPONSE_MESSAGE                          "message"
-#define CONFIGURATION_RESPONSE_CONFIG_KEY                       "config_key"
-#define CONFIGURATION_RESPONSE_REQUESTED_VALUE                  "requested_value"
-#define CONFIGURATION_RESPONSE_CURRENT_VALUE                    "current_value"
-#define CONFIGURATION_RESPONSE_OLD_VALUE                        "old_value"
-#define CONFIGURATION_RESPONSE_NEW_VALUE                        "new_value"
-#define CONFIGURATION_RESPONSE_RESTART_REQUIRED                 "restart_required"
-#define CONFIGURATION_STATUS_SUCCESS                            "success"
-#define CONFIGURATION_STATUS_RESTART_REQUIRED                   "success_restart_required"
-#define CONFIGURATION_MESSAGE_SUCCESS                           "Configuration change applied successfully"
-#define CONFIGURATION_MESSAGE_RESTART_REQUIRED                  "Configuration change requires restart. Current values preserved."
+#define CONFIGURATION_RESPONSE_STATUS           "status"
+#define CONFIGURATION_RESPONSE_MESSAGE          "message"
+#define CONFIGURATION_RESPONSE_CONFIG_KEY       "config_key"
+#define CONFIGURATION_RESPONSE_REQUESTED_VALUE  "requested_value"
+#define CONFIGURATION_RESPONSE_CURRENT_VALUE    "current_value"
+#define CONFIGURATION_RESPONSE_OLD_VALUE        "old_value"
+#define CONFIGURATION_RESPONSE_NEW_VALUE        "new_value"
+#define CONFIGURATION_RESPONSE_RESTART_REQUIRED "restart_required"
+#define CONFIGURATION_STATUS_SUCCESS            "success"
+#define CONFIGURATION_STATUS_RESTART_REQUIRED   "success_restart_required"
+#define CONFIGURATION_MESSAGE_SUCCESS           "Configuration change applied successfully"
+#define CONFIGURATION_MESSAGE_RESTART_REQUIRED  "Configuration change requires restart. Current values preserved."
 
 /**
  * @struct config_key_info
@@ -102,11 +102,11 @@ extern "C" {
  */
 struct config_key_info
 {
-   char section[MISC_LENGTH];   /**< Section name: "pgvictoria" for main config, "server" for server config */
-   char context[MISC_LENGTH];   /**< Context identifier: server name for server configs, empty for main config */
-   char key[MISC_LENGTH];       /**< Configuration parameter name (e.g., "port", "log_level") */
-   bool is_main_section;        /**< True if this is a main/global configuration parameter */
-   int section_type;            /**< Section type: 0=main, 1=server */
+   char section[MISC_LENGTH]; /**< Section name: "pgvictoria" for main config, "server" for server config */
+   char context[MISC_LENGTH]; /**< Context identifier: server name for server configs, empty for main config */
+   char key[MISC_LENGTH];     /**< Configuration parameter name (e.g., "port", "log_level") */
+   bool is_main_section;      /**< True if this is a main/global configuration parameter */
+   int section_type;          /**< Section type: 0=main, 1=server */
 };
 
 /**

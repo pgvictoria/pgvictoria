@@ -41,32 +41,32 @@ extern "C" {
 #include <openssl/asn1.h>
 #include <sys/types.h>
 
-#define SHORT_TIME_LENGTH  8 + 1
+#define SHORT_TIME_LENGTH 8 + 1
 #define LONG_TIME_LENGTH  16 + 1
 #define UTC_TIME_LENGTH   29 + 1
 
 /** Define Windows 20 palette colors as constants using ANSI codes **/
-#define COLOR_BLACK         "\033[30m"
-#define COLOR_DARK_RED      "\033[31m"
-#define COLOR_DARK_GREEN    "\033[32m"
-#define COLOR_DARK_YELLOW   "\033[33m"
-#define COLOR_DARK_BLUE     "\033[34m"
-#define COLOR_DARK_MAGENTA  "\033[35m"
-#define COLOR_DARK_CYAN     "\033[36m"
-#define COLOR_LIGHT_GREY    "\033[37m"
-#define COLOR_MONEY_GREEN   "\033[32m"   /* Close approximation */
-#define COLOR_SKY_BLUE      "\033[36m"   /* Close approximation */
-#define COLOR_CREAM         "\033[97m"   /* Close approximation */
-#define COLOR_MEDIUM_GREY   "\033[90m"
-#define COLOR_DARK_GREY     "\033[90m"
-#define COLOR_RED           "\033[31m"
-#define COLOR_GREEN         "\033[32m"
-#define COLOR_YELLOW        "\033[33m"
-#define COLOR_BLUE          "\033[34m"
-#define COLOR_MAGENTA       "\033[35m"
-#define COLOR_CYAN          "\033[36m"
-#define COLOR_WHITE         "\033[97m"
-#define COLOR_RESET         "\033[0m"    /* Reset to default color */
+#define COLOR_BLACK        "\033[30m"
+#define COLOR_DARK_RED     "\033[31m"
+#define COLOR_DARK_GREEN   "\033[32m"
+#define COLOR_DARK_YELLOW  "\033[33m"
+#define COLOR_DARK_BLUE    "\033[34m"
+#define COLOR_DARK_MAGENTA "\033[35m"
+#define COLOR_DARK_CYAN    "\033[36m"
+#define COLOR_LIGHT_GREY   "\033[37m"
+#define COLOR_MONEY_GREEN  "\033[32m" /* Close approximation */
+#define COLOR_SKY_BLUE     "\033[36m" /* Close approximation */
+#define COLOR_CREAM        "\033[97m" /* Close approximation */
+#define COLOR_MEDIUM_GREY  "\033[90m"
+#define COLOR_DARK_GREY    "\033[90m"
+#define COLOR_RED          "\033[31m"
+#define COLOR_GREEN        "\033[32m"
+#define COLOR_YELLOW       "\033[33m"
+#define COLOR_BLUE         "\033[34m"
+#define COLOR_MAGENTA      "\033[35m"
+#define COLOR_CYAN         "\033[36m"
+#define COLOR_WHITE        "\033[97m"
+#define COLOR_RESET        "\033[0m" /* Reset to default color */
 
 /** @struct signal_info
  * Defines the signal structure
@@ -102,15 +102,15 @@ struct pgvictoria_command
    char* subcommand;                         /**< The subcommand if there is one */
    int accepted_argument_count[MISC_LENGTH]; /**< The argument count */
 
-   int action;                               /**< The specific action */
-   char* default_argument;                   /**< The default argument */
-   char* log_message;                        /**< The log message used */
+   int action;             /**< The specific action */
+   char* default_argument; /**< The default argument */
+   char* log_message;      /**< The log message used */
 
    /* Deprecation information */
-   bool deprecated;                                /**< Is the command deprecated */
-   unsigned int deprecated_since_major;            /**< Deprecated since major version */
-   unsigned int deprecated_since_minor;            /**< Deprecated since minor version */
-   char* deprecated_by;                      /**< Deprecated by this command */
+   bool deprecated;                     /**< Is the command deprecated */
+   unsigned int deprecated_since_major; /**< Deprecated since major version */
+   unsigned int deprecated_since_minor; /**< Deprecated since minor version */
+   char* deprecated_by;                 /**< Deprecated by this command */
 };
 
 /** @struct pgvictoria_parsed_command
@@ -123,7 +123,7 @@ struct pgvictoria_command
 struct pgvictoria_parsed_command
 {
    struct pgvictoria_command* cmd; /**< The command */
-   char* args[MISC_LENGTH];            /**< The arguments */
+   char* args[MISC_LENGTH];        /**< The arguments */
 };
 
 /**
@@ -160,7 +160,7 @@ parse_command(int argc,
  * @return The identifier
  */
 int32_t
-pgvictoria_get_request(struct message *msg);
+pgvictoria_get_request(struct message* msg);
 
 /**
  * Extract a error message field from a message
@@ -638,7 +638,7 @@ pgvictoria_list_directory(char* directory);
  * @param to The to file
  * @return The result
  */
-int pgvictoria_copy_file(char *from, char *to);
+int pgvictoria_copy_file(char* from, char* to);
 
 /**
  * Delete a file
@@ -646,7 +646,7 @@ int pgvictoria_copy_file(char *from, char *to);
  * @return The result
  */
 int
-pgvictoria_delete_file(char *file);
+pgvictoria_delete_file(char* file);
 
 /**
  * Move a file
@@ -1093,7 +1093,7 @@ pgvictoria_is_number(char* str, int base);
  * @param path The input path
  * @return Newly allocated parent directory string, or NULL on allocation failure
  */
-char *
+char*
 pgvictoria_get_parent_dir(const char* path);
 
 /**
@@ -1105,7 +1105,7 @@ pgvictoria_get_parent_dir(const char* path);
  * @return 0 upon success, otherwise 1
  */
 int
-pgvictoria_extract_username_database(struct message *msg, char **username, char **database, char **appname);
+pgvictoria_extract_username_database(struct message* msg, char** username, char** database, char** appname);
 
 /**
  * Extract a message from a message
@@ -1115,7 +1115,7 @@ pgvictoria_extract_username_database(struct message *msg, char **username, char 
  * @return 0 upon success, otherwise 1
  */
 int
-pgvictoria_extract_message(char type, struct message *msg, struct message **extracted);
+pgvictoria_extract_message(char type, struct message* msg, struct message** extracted);
 
 /**
  * Extract a message based on an offset
@@ -1125,7 +1125,7 @@ pgvictoria_extract_message(char type, struct message *msg, struct message **extr
  * @return The next offset
  */
 size_t
-pgvictoria_extract_message_offset(size_t offset, void *data, struct message **extracted);
+pgvictoria_extract_message_offset(size_t offset, void* data, struct message** extracted);
 
 /**
  * Extract a message based on a type
@@ -1136,7 +1136,7 @@ pgvictoria_extract_message_offset(size_t offset, void *data, struct message **ex
  * @return 0 upon success, otherwise 1
  */
 int
-pgvictoria_extract_message_from_data(char type, void *data, size_t data_size, struct message **extracted);
+pgvictoria_extract_message_from_data(char type, void* data, size_t data_size, struct message** extracted);
 
 #ifdef __cplusplus
 }

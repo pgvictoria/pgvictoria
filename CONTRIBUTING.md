@@ -147,10 +147,10 @@ files.
 
 Please, follow the coding style of the project.
 
-You can use the [uncrustify](http://uncrustify.sourceforge.net/) tool to help with the formatting, by running
+You can use the [clang format](https://www.llvm.org/) tool to help with the formatting, by running
 
 ```
-./uncrustify.sh
+./clang-format.sh
 ```
 
 and verify the changes.

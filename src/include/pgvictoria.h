@@ -45,77 +45,77 @@ extern "C" {
 #include <sys/types.h>
 #include <openssl/ssl.h>
 
-#define VERSION "0.1.0"
+#define VERSION                      "0.1.0"
 
-#define PGVICTORIA_HOMEPAGE "https://pgvictoria.github.io/"
-#define PGVICTORIA_ISSUES "https://github.com/pgvictoria/pgvictoria/issues"
+#define PGVICTORIA_HOMEPAGE          "https://pgvictoria.github.io/"
+#define PGVICTORIA_ISSUES            "https://github.com/pgvictoria/pgvictoria/issues"
 
-#define POSTGRESQL_MIN_VERSION 13
+#define POSTGRESQL_MIN_VERSION       13
 
-#define MAIN_UDS ".s.pgvictoria"
+#define MAIN_UDS                     ".s.pgvictoria"
 
-#define MAX_PROCESS_TITLE_LENGTH 256
+#define MAX_PROCESS_TITLE_LENGTH     256
 
-#define ALIGNMENT_SIZE          512
-#define DEFAULT_BUFFER_SIZE  131072
+#define ALIGNMENT_SIZE               512
+#define DEFAULT_BUFFER_SIZE          131072
 
-#define MAX_USERNAME_LENGTH  128
-#define MAX_PASSWORD_LENGTH 1024
+#define MAX_USERNAME_LENGTH          128
+#define MAX_PASSWORD_LENGTH          1024
 
-#define MAX_PATH       1024
-#define MISC_LENGTH     128
-#define MAX_COMMENT    2048
-#define MAX_EXTRA_PATH 8192
+#define MAX_PATH                     1024
+#define MISC_LENGTH                  128
+#define MAX_COMMENT                  2048
+#define MAX_EXTRA_PATH               8192
 
-#define MAX_EXTRA 64
-#define NUMBER_OF_SERVERS 64
-#define NUMBER_OF_USERS   64
+#define MAX_EXTRA                    64
+#define NUMBER_OF_SERVERS            64
+#define NUMBER_OF_USERS              64
 
-#define STATE_FREE        0
-#define STATE_IN_USE      1
+#define STATE_FREE                   0
+#define STATE_IN_USE                 1
 
-#define MAX_NUMBER_OF_COLUMNS 8
+#define MAX_NUMBER_OF_COLUMNS        8
 
-#define ENCRYPTION_NONE        0
-#define ENCRYPTION_AES_256_CBC 1
-#define ENCRYPTION_AES_192_CBC 2
-#define ENCRYPTION_AES_128_CBC 3
-#define ENCRYPTION_AES_256_CTR 4
-#define ENCRYPTION_AES_192_CTR 5
-#define ENCRYPTION_AES_128_CTR 6
+#define ENCRYPTION_NONE              0
+#define ENCRYPTION_AES_256_CBC       1
+#define ENCRYPTION_AES_192_CBC       2
+#define ENCRYPTION_AES_128_CBC       3
+#define ENCRYPTION_AES_256_CTR       4
+#define ENCRYPTION_AES_192_CTR       5
+#define ENCRYPTION_AES_128_CTR       6
 
-#define AUTH_SUCCESS      0
-#define AUTH_BAD_PASSWORD 1
-#define AUTH_ERROR        2
-#define AUTH_TIMEOUT      3
+#define AUTH_SUCCESS                 0
+#define AUTH_BAD_PASSWORD            1
+#define AUTH_ERROR                   2
+#define AUTH_TIMEOUT                 3
 
-#define HUGEPAGE_OFF 0
-#define HUGEPAGE_TRY 1
-#define HUGEPAGE_ON  2
+#define HUGEPAGE_OFF                 0
+#define HUGEPAGE_TRY                 1
+#define HUGEPAGE_ON                  2
 
 #define UPDATE_PROCESS_TITLE_NEVER   0
 #define UPDATE_PROCESS_TITLE_STRICT  1
 #define UPDATE_PROCESS_TITLE_MINIMAL 2
 #define UPDATE_PROCESS_TITLE_VERBOSE 3
 
-#define INDENT_PER_LEVEL      2
-#define FORMAT_JSON           0
-#define FORMAT_TEXT           1
-#define FORMAT_JSON_COMPACT   2
-#define BULLET_POINT          "- "
+#define INDENT_PER_LEVEL             2
+#define FORMAT_JSON                  0
+#define FORMAT_TEXT                  1
+#define FORMAT_JSON_COMPACT          2
+#define BULLET_POINT                 "- "
 
-#define likely(x)    __builtin_expect (!!(x), 1)
-#define unlikely(x)  __builtin_expect (!!(x), 0)
+#define likely(x)                    __builtin_expect(!!(x), 1)
+#define unlikely(x)                  __builtin_expect(!!(x), 0)
 
-#define EMPTY_STR(_s) (_s[0] == 0)
+#define EMPTY_STR(_s)                (_s[0] == 0)
 
-#define MAX(a, b)               \
-        ({ __typeof__ (a) _a = (a);  \
+#define MAX(a, b) \
+   ({ __typeof__ (a) _a = (a);  \
            __typeof__ (b) _b = (b);  \
            _a > _b ? _a : _b; })
 
-#define MIN(a, b)               \
-        ({ __typeof__ (a) _a = (a);  \
+#define MIN(a, b) \
+   ({ __typeof__ (a) _a = (a);  \
            __typeof__ (b) _b = (b);  \
            _a < _b ? _a : _b; })
 
@@ -130,13 +130,14 @@ extern "C" {
  *
  */
 #define SLEEP(zzz)                  \
-        do                               \
-        {                                \
-           struct timespec ts_private;   \
-           ts_private.tv_sec = 0;        \
-           ts_private.tv_nsec = zzz;     \
-           nanosleep(&ts_private, NULL); \
-        } while (0);
+   do                               \
+   {                                \
+      struct timespec ts_private;   \
+      ts_private.tv_sec = 0;        \
+      ts_private.tv_nsec = zzz;     \
+      nanosleep(&ts_private, NULL); \
+   }                                \
+   while (0);
 
 /*
  * Commonly used block of code to sleep
@@ -152,15 +153,16 @@ extern "C" {
      else
        SLEEP_AND_GOTO(100000L, retry)
  */
-#define SLEEP_AND_GOTO(zzz, goto_to)    \
-        do                                   \
-        {                                    \
-           struct timespec ts_private;       \
-           ts_private.tv_sec = 0;            \
-           ts_private.tv_nsec = zzz;         \
-           nanosleep(&ts_private, NULL);     \
-           goto goto_to;                     \
-        } while (0);
+#define SLEEP_AND_GOTO(zzz, goto_to) \
+   do                                \
+   {                                 \
+      struct timespec ts_private;    \
+      ts_private.tv_sec = 0;         \
+      ts_private.tv_nsec = zzz;      \
+      nanosleep(&ts_private, NULL);  \
+      goto goto_to;                  \
+   }                                 \
+   while (0);
 
 /**
  * The shared memory segment
@@ -173,24 +175,24 @@ extern void* shmem;
  */
 struct version
 {
-   int major;     /**< Major version number */
-   int minor;     /**< Minor version number (-1 if not specified) */
-   int patch;     /**< Patch version number (-1 if not specified) */
-} __attribute__ ((aligned (64)));
+   int major; /**< Major version number */
+   int minor; /**< Minor version number (-1 if not specified) */
+   int patch; /**< Patch version number (-1 if not specified) */
+} __attribute__((aligned(64)));
 
 /** @struct server
  * Defines a server
  */
 struct server
 {
-   char name[MISC_LENGTH];                  /**< The name of the server */
-   char host[MISC_LENGTH];                  /**< The host name of the server */
-   int port;                                /**< The port of the server */
-   bool primary;                            /**< Is the server a primary ? */
-   char username[MAX_USERNAME_LENGTH];      /**< The user name */
-   int version;                             /**< The major version of the server*/
-   int minor_version;                       /**< The minor version of the server*/
-} __attribute__ ((aligned (64)));
+   char name[MISC_LENGTH];             /**< The name of the server */
+   char host[MISC_LENGTH];             /**< The host name of the server */
+   int port;                           /**< The port of the server */
+   bool primary;                       /**< Is the server a primary ? */
+   char username[MAX_USERNAME_LENGTH]; /**< The user name */
+   int version;                        /**< The major version of the server*/
+   int minor_version;                  /**< The minor version of the server*/
+} __attribute__((aligned(64)));
 
 /** @struct user
  * Defines a user
@@ -199,56 +201,56 @@ struct user
 {
    char username[MAX_USERNAME_LENGTH]; /**< The user name */
    char password[MAX_PASSWORD_LENGTH]; /**< The password */
-} __attribute__ ((aligned (64)));
+} __attribute__((aligned(64)));
 
 /** @struct common_configuration
  * Defines configurations that are common between all tools
  */
 struct common_configuration
 {
-   char home_dir[MAX_PATH];                        /**< The home directory */
+   char home_dir[MAX_PATH]; /**< The home directory */
 
-   int log_type;                                   /**< The logging type */
-   int log_level;                                  /**< The logging level */
-   char log_path[MISC_LENGTH];                     /**< The logging path */
-   int log_mode;                                   /**< The logging mode */
-   int log_rotation_size;                          /**< bytes to force log rotation */
-   int log_rotation_age;                           /**< minutes for log rotation */
-   char log_line_prefix[MISC_LENGTH];              /**< The logging prefix */
-   atomic_schar log_lock;                          /**< The logging lock */
+   int log_type;                      /**< The logging type */
+   int log_level;                     /**< The logging level */
+   char log_path[MISC_LENGTH];        /**< The logging path */
+   int log_mode;                      /**< The logging mode */
+   int log_rotation_size;             /**< bytes to force log rotation */
+   int log_rotation_age;              /**< minutes for log rotation */
+   char log_line_prefix[MISC_LENGTH]; /**< The logging prefix */
+   atomic_schar log_lock;             /**< The logging lock */
 
-   struct server servers[NUMBER_OF_SERVERS];       /**< The servers */
-   struct user users[NUMBER_OF_USERS];             /**< The users */
+   struct server servers[NUMBER_OF_SERVERS]; /**< The servers */
+   struct user users[NUMBER_OF_USERS];       /**< The users */
 
-   int number_of_servers;                          /**< The number of servers */
-   int number_of_users;                            /**< The number of users */
+   int number_of_servers; /**< The number of servers */
+   int number_of_users;   /**< The number of users */
 
-   char configuration_path[MAX_PATH];              /**< The configuration path */
-   char users_path[MAX_PATH];                      /**< The users path */
-} __attribute__ ((aligned (64)));
+   char configuration_path[MAX_PATH]; /**< The configuration path */
+   char users_path[MAX_PATH];         /**< The users path */
+} __attribute__((aligned(64)));
 
 /** @struct main_configuration
  * Defines the main configuration list
  */
 struct main_configuration
 {
-   struct common_configuration common;          /**< Common configurations that are shared across multiple tools */
+   struct common_configuration common; /**< Common configurations that are shared across multiple tools */
 
-   bool running;                                /**< Is pgvictoria running */
+   bool running; /**< Is pgvictoria running */
 
-   char host[MISC_LENGTH];                      /**< The host */
+   char host[MISC_LENGTH]; /**< The host */
 
-   int authentication_timeout;                  /**< The authentication timeout in seconds */
-   char pidfile[MAX_PATH];                      /**< File containing the PID */
+   int authentication_timeout; /**< The authentication timeout in seconds */
+   char pidfile[MAX_PATH];     /**< File containing the PID */
 
-   unsigned int update_process_title;           /**< Behaviour for updating the process title */
+   unsigned int update_process_title; /**< Behaviour for updating the process title */
 
-   char libev[MISC_LENGTH];                     /**< Name of libev mode */
-   int backlog;                                 /**< The backlog for listen */
-   unsigned char hugepage;                      /**< Huge page support */
+   char libev[MISC_LENGTH]; /**< Name of libev mode */
+   int backlog;             /**< The backlog for listen */
+   unsigned char hugepage;  /**< Huge page support */
 
-   char unix_socket_dir[MISC_LENGTH];           /**< The directory for the Unix Domain Socket */
-} __attribute__ ((aligned (64)));
+   char unix_socket_dir[MISC_LENGTH]; /**< The directory for the Unix Domain Socket */
+} __attribute__((aligned(64)));
 
 #ifdef __cplusplus
 }

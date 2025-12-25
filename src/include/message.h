@@ -52,19 +52,19 @@ extern struct token_bucket bucket;
  */
 struct message
 {
-   signed char kind;  /**< The kind of the message */
-   ssize_t length;    /**< The length of the message */
-   void* data;        /**< The message data */
-} __attribute__ ((aligned (64)));
+   signed char kind; /**< The kind of the message */
+   ssize_t length;   /**< The length of the message */
+   void* data;       /**< The message data */
+} __attribute__((aligned(64)));
 
 /** @struct tuple
  * Defines a tuple
  */
 struct tuple
 {
-   char** data;                   /**< The data */
-   struct tuple* next;            /**< The next tuple */
-} __attribute__ ((aligned (64)));
+   char** data;        /**< The data */
+   struct tuple* next; /**< The next tuple */
+} __attribute__((aligned(64)));
 
 /** @struct query_response
  * Defines the response to a query
@@ -75,7 +75,7 @@ struct query_response
    int number_of_columns;                          /**< The number of columns */
    bool is_command_complete;                       /**< The response is command complete or not */
    struct tuple* tuples;                           /**< The resulting tuples */
-} __attribute__ ((aligned (64)));
+} __attribute__((aligned(64)));
 
 /**
  * Read a message in blocking mode
@@ -366,8 +366,8 @@ pgvictoria_create_standby_status_update_message(int64_t received, int64_t flushe
  */
 int
 pgvictoria_create_base_backup_message(int server_version, bool incremental, char* label, bool include_wal,
-                                    int compression, int compression_level,
-                                    struct message** msg);
+                                      int compression, int compression_level,
+                                      struct message** msg);
 
 /**
  * Create a replication slot
@@ -426,9 +426,6 @@ pgvictoria_send_copy_data(SSL* ssl, int socket, char* buffer, size_t nbytes);
  */
 bool
 pgvictoria_has_message(char type, void* data, size_t data_size);
-
-
-
 
 /**
  * Query execute

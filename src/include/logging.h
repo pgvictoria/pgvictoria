@@ -38,33 +38,33 @@ extern "C" {
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define PGVICTORIA_LOGGING_TYPE_CONSOLE 0
-#define PGVICTORIA_LOGGING_TYPE_FILE    1
-#define PGVICTORIA_LOGGING_TYPE_SYSLOG  2
+#define PGVICTORIA_LOGGING_TYPE_CONSOLE            0
+#define PGVICTORIA_LOGGING_TYPE_FILE               1
+#define PGVICTORIA_LOGGING_TYPE_SYSLOG             2
 
-#define PGVICTORIA_LOGGING_LEVEL_DEBUG5  1
-#define PGVICTORIA_LOGGING_LEVEL_DEBUG4  1
-#define PGVICTORIA_LOGGING_LEVEL_DEBUG3  1
-#define PGVICTORIA_LOGGING_LEVEL_DEBUG2  1
-#define PGVICTORIA_LOGGING_LEVEL_DEBUG1  2
-#define PGVICTORIA_LOGGING_LEVEL_INFO    3
-#define PGVICTORIA_LOGGING_LEVEL_WARN    4
-#define PGVICTORIA_LOGGING_LEVEL_ERROR   5
-#define PGVICTORIA_LOGGING_LEVEL_FATAL   6
+#define PGVICTORIA_LOGGING_LEVEL_DEBUG5            1
+#define PGVICTORIA_LOGGING_LEVEL_DEBUG4            1
+#define PGVICTORIA_LOGGING_LEVEL_DEBUG3            1
+#define PGVICTORIA_LOGGING_LEVEL_DEBUG2            1
+#define PGVICTORIA_LOGGING_LEVEL_DEBUG1            2
+#define PGVICTORIA_LOGGING_LEVEL_INFO              3
+#define PGVICTORIA_LOGGING_LEVEL_WARN              4
+#define PGVICTORIA_LOGGING_LEVEL_ERROR             5
+#define PGVICTORIA_LOGGING_LEVEL_FATAL             6
 
-#define PGVICTORIA_LOGGING_MODE_CREATE 0
-#define PGVICTORIA_LOGGING_MODE_APPEND 1
+#define PGVICTORIA_LOGGING_MODE_CREATE             0
+#define PGVICTORIA_LOGGING_MODE_APPEND             1
 
-#define PGVICTORIA_LOGGING_ROTATION_DISABLED 0
+#define PGVICTORIA_LOGGING_ROTATION_DISABLED       0
 
 #define PGVICTORIA_LOGGING_DEFAULT_LOG_LINE_PREFIX "%Y-%m-%d %H:%M:%S"
 
-#define pgvictoria_log_trace(...) pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_DEBUG5, __FILE__, __LINE__, __VA_ARGS__)
-#define pgvictoria_log_debug(...) pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_DEBUG1, __FILE__, __LINE__, __VA_ARGS__)
-#define pgvictoria_log_info(...)  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define pgvictoria_log_warn(...)  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
-#define pgvictoria_log_error(...) pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
-#define pgvictoria_log_fatal(...) pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_trace(...)                  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_DEBUG5, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_debug(...)                  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_DEBUG1, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_info(...)                   pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_warn(...)                   pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_error(...)                  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define pgvictoria_log_fatal(...)                  pgvictoria_log_line(PGVICTORIA_LOGGING_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * Start the logging system
