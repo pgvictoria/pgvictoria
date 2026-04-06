@@ -46,7 +46,7 @@
 
 FILE* log_file;
 
-time_t next_log_rotation_age;  /* number of seconds at which the next location will happen */
+time_t next_log_rotation_age; /* number of seconds at which the next location will happen */
 
 char current_log_path[MAX_PATH]; /* the current log file */
 
@@ -56,26 +56,25 @@ static bool log_rotation_required(void);
 static bool log_rotation_set_next_rotation_age(void);
 static int log_file_open(void);
 static void log_file_rotate(void);
+static void output_log_line(char* l);
 
-static char *levels[] =
-{
-   "TRACE",
-   "DEBUG",
-   "INFO",
-   "WARN",
-   "ERROR",
-   "FATAL"
-};
+static char* levels[] =
+   {
+      "TRACE",
+      "DEBUG",
+      "INFO",
+      "WARN",
+      "ERROR",
+      "FATAL"};
 
 static char* colors[] =
-{
-   "\x1b[37m",
-   "\x1b[36m",
-   "\x1b[32m",
-   "\x1b[91m",
-   "\x1b[31m",
-   "\x1b[35m"
-};
+   {
+      "\x1b[37m",
+      "\x1b[36m",
+      "\x1b[32m",
+      "\x1b[91m",
+      "\x1b[31m",
+      "\x1b[35m"};
 
 /**
  *
@@ -210,7 +209,7 @@ retry:
 #ifdef DEBUG
          if (level > 4)
          {
-            char *bt = NULL;
+            char* bt = NULL;
             pgvictoria_backtrace_string(&bt);
             if (bt != NULL)
             {
@@ -237,15 +236,26 @@ retry:
          else if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_FILE)
          {
             buf[strftime(buf, sizeof(buf), config->common.log_line_prefix, tm)] = '\0';
-            fprintf(output, "%s %-5s %s:%d ",
-                    buf, levels[level - 1], filename, line);
-            vfprintf(output, fmt, vl);
-            fprintf(output, "\n");
-            fflush(output);
-
-            if (log_rotation_required())
+            if (log_file != NULL)
             {
-               log_file_rotate();
+               fprintf(output, "%s %-5s %s:%d ",
+                       buf, levels[level - 1], filename, line);
+               vfprintf(output, fmt, vl);
+               fprintf(output, "\n");
+               fflush(output);
+
+               if (log_rotation_required())
+               {
+                  log_file_rotate();
+               }
+            }
+            else
+            {
+               fprintf(stderr, "%s %-5s %s:%d ",
+                       buf, levels[level - 1], filename, line);
+               vfprintf(stderr, fmt, vl);
+               fprintf(stderr, "\n");
+               fflush(stderr);
             }
          }
          else if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_SYSLOG)
@@ -281,7 +291,7 @@ retry:
          atomic_store(&config->common.log_lock, STATE_FREE);
       }
       else
-        SLEEP_AND_GOTO(1000000L,retry)
+         SLEEP_AND_GOTO(1000000L, retry)
    }
 }
 
@@ -307,67 +317,203 @@ retry:
 
       if (atomic_compare_exchange_strong(&config->common.log_lock, &isfree, STATE_IN_USE))
       {
-         char buf[(3 * size) + (2 * ((size / LINE_LENGTH) + 1)) + 1 + 1];
-         int j = 0;
-         int k = 0;
-
-         memset(&buf, 0, sizeof(buf));
-
-         for (size_t i = 0; i < size; i++)
+         if (size > 4096)
          {
-            if (k == LINE_LENGTH)
+            int index = 0;
+            size_t count = 0;
+
+            /* Display the first 1024 bytes */
+            index = 0;
+            count = 1024;
+            while (count > 0)
             {
-               buf[j] = '\n';
-               j++;
-               k = 0;
+               char* t = NULL;
+               char* n = NULL;
+               char* l = NULL;
+
+               for (int i = 0; i < LINE_LENGTH; i++)
+               {
+                  signed char c;
+                  char buf[3] = {0};
+
+                  c = (signed char)*((char*)data + index + i);
+                  snprintf(&buf[0], sizeof(buf), "%02X", c);
+
+                  l = pgvictoria_append(l, &buf[0]);
+
+                  if (c >= 32)
+                  {
+                     n = pgvictoria_append_char(n, c);
+                  }
+                  else
+                  {
+                     n = pgvictoria_append_char(n, '?');
+                  }
+               }
+
+               t = pgvictoria_append(t, l);
+               t = pgvictoria_append_char(t, ' ');
+               t = pgvictoria_append(t, n);
+
+               output_log_line(t);
+
+               free(t);
+               t = NULL;
+
+               free(l);
+               l = NULL;
+
+               free(n);
+               n = NULL;
+
+               count -= LINE_LENGTH;
+               index += LINE_LENGTH;
             }
-            sprintf(&buf[j], "%02X", (signed char) *((char*)data + i));
-            j += 2;
-            k++;
+
+            output_log_line("---------------------------------------------------------------- --------------------------------");
+
+            /* Display the last 1024 bytes */
+            index = size - 1024;
+            count = 1024;
+            while (count > 0)
+            {
+               char* t = NULL;
+               char* n = NULL;
+               char* l = NULL;
+
+               for (int i = 0; i < LINE_LENGTH; i++)
+               {
+                  signed char c;
+                  char buf[3] = {0};
+
+                  c = (signed char)*((char*)data + index + i);
+                  snprintf(&buf[0], sizeof(buf), "%02X", c);
+
+                  l = pgvictoria_append(l, &buf[0]);
+
+                  if (c >= 32)
+                  {
+                     n = pgvictoria_append_char(n, c);
+                  }
+                  else
+                  {
+                     n = pgvictoria_append_char(n, '?');
+                  }
+               }
+
+               t = pgvictoria_append(t, l);
+               t = pgvictoria_append_char(t, ' ');
+               t = pgvictoria_append(t, n);
+
+               output_log_line(t);
+
+               free(t);
+               t = NULL;
+
+               free(l);
+               l = NULL;
+
+               free(n);
+               n = NULL;
+
+               count -= LINE_LENGTH;
+               index += LINE_LENGTH;
+            }
          }
-
-         buf[j] = '\n';
-         j++;
-         k = 0;
-
-         for (size_t i = 0; i < size; i++)
+         else
          {
-            signed char c = (signed char) *((char*)data + i);
-            if (k == LINE_LENGTH)
-            {
-               buf[j] = '\n';
-               j++;
-               k = 0;
-            }
-            if (c >= 32)
-            {
-               buf[j] = c;
-            }
-            else
-            {
-               buf[j] = '?';
-            }
-            j++;
-            k++;
-         }
+            size_t offset = 0;
+            size_t remaining = size;
+            bool full_line = false;
 
-         if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_CONSOLE)
-         {
-            fprintf(stdout, "%s", buf);
-            fprintf(stdout, "\n");
-            fflush(stdout);
-         }
-         else if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_FILE)
-         {
-            fprintf(log_file, "%s", buf);
-            fprintf(log_file, "\n");
-            fflush(log_file);
+            while (remaining > 0)
+            {
+               char* t = NULL;
+               char* n = NULL;
+               char* l = NULL;
+               size_t count = MIN((int)remaining, (int)LINE_LENGTH);
+
+               for (size_t i = 0; i < count; i++)
+               {
+                  signed char c;
+                  char buf[3] = {0};
+
+                  c = (signed char)*((char*)data + offset + i);
+                  snprintf(&buf[0], sizeof(buf), "%02X", c);
+
+                  l = pgvictoria_append(l, &buf[0]);
+
+                  if (c >= 32)
+                  {
+                     n = pgvictoria_append_char(n, c);
+                  }
+                  else
+                  {
+                     n = pgvictoria_append_char(n, '?');
+                  }
+               }
+
+               if (strlen(l) == LINE_LENGTH * 2)
+               {
+                  full_line = true;
+               }
+               else if (full_line)
+               {
+                  if (strlen(l) < LINE_LENGTH * 2)
+                  {
+                     int chars_missing = (LINE_LENGTH * 2) - strlen(l);
+                     for (int i = 0; i < chars_missing; i++)
+                     {
+                        l = pgvictoria_append_char(l, ' ');
+                     }
+                  }
+               }
+
+               t = pgvictoria_append(t, l);
+               t = pgvictoria_append_char(t, ' ');
+               t = pgvictoria_append(t, n);
+
+               output_log_line(t);
+
+               free(t);
+               t = NULL;
+
+               free(l);
+               l = NULL;
+
+               free(n);
+               n = NULL;
+
+               remaining -= count;
+               offset += count;
+            }
          }
 
          atomic_store(&config->common.log_lock, STATE_FREE);
       }
       else
-        SLEEP_AND_GOTO(1000000L,retry)
+         SLEEP_AND_GOTO(1000000L, retry)
+   }
+}
+
+static void
+output_log_line(char* l)
+{
+   struct main_configuration* config;
+
+   config = (struct main_configuration*)shmem;
+
+   if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_CONSOLE)
+   {
+      fprintf(stdout, "%s", l);
+      fprintf(stdout, "\n");
+      fflush(stdout);
+   }
+   else if (config->common.log_type == PGVICTORIA_LOGGING_TYPE_FILE)
+   {
+      fprintf(log_file, "%s", l);
+      fprintf(log_file, "\n");
+      fflush(log_file);
    }
 }
 
@@ -402,8 +548,7 @@ log_rotation_enabled(void)
 
    // log rotation is enabled if either log_rotation_age or
    // log_rotation_size is enabled
-   return config->common.log_rotation_age != PGVICTORIA_LOGGING_ROTATION_DISABLED
-          || config->common.log_rotation_size != PGVICTORIA_LOGGING_ROTATION_DISABLED;
+   return config->common.log_rotation_age != PGVICTORIA_LOGGING_ROTATION_DISABLED || config->common.log_rotation_size != PGVICTORIA_LOGGING_ROTATION_DISABLED;
 }
 
 static void
@@ -528,6 +673,7 @@ log_file_rotate(void)
    {
       fflush(log_file);
       fclose(log_file);
+      log_file = NULL;
       log_file_open();
    }
 }

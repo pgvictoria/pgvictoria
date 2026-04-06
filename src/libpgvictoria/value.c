@@ -68,7 +68,7 @@ pgvictoria_value_create(enum value_type type, uintptr_t data, struct value** val
    {
       goto error;
    }
-   val = (struct value*) malloc(sizeof(struct value));
+   val = (struct value*)malloc(sizeof(struct value));
    if (val == NULL)
    {
       goto error;
@@ -377,31 +377,31 @@ pgvictoria_value_type_to_string(enum value_type type)
 static void
 noop_destroy_cb(uintptr_t data)
 {
-   (void) data;
+   (void)data;
 }
 
 static void
 free_destroy_cb(uintptr_t data)
 {
-   free((void*) data);
+   free((void*)data);
 }
 
 static void
 art_destroy_cb(uintptr_t data)
 {
-   pgvictoria_art_destroy((struct art*) data);
+   pgvictoria_art_destroy((struct art*)data);
 }
 
 static void
 deque_destroy_cb(uintptr_t data)
 {
-   pgvictoria_deque_destroy((struct deque*) data);
+   pgvictoria_deque_destroy((struct deque*)data);
 }
 
 static void
 json_destroy_cb(uintptr_t data)
 {
-   pgvictoria_json_destroy((struct json*) data);
+   pgvictoria_json_destroy((struct json*)data);
 }
 
 static char*
@@ -409,8 +409,8 @@ noop_to_string_cb(uintptr_t data, int32_t format, char* tag, int indent)
 {
    char* ret = NULL;
    ret = pgvictoria_indent(ret, tag, indent);
-   (void) data;
-   (void) format;
+   (void)data;
+   (void)format;
    return ret;
 }
 
@@ -422,7 +422,7 @@ int8_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char* 
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRId8, (int8_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRId8, (int8_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -434,7 +434,7 @@ uint8_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char*
    char buf[MISC_LENGTH];
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRIu8, (uint8_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRIu8, (uint8_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -447,7 +447,7 @@ int16_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char*
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRId16, (int16_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRId16, (int16_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -460,7 +460,7 @@ uint16_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRIu16, (uint16_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRIu16, (uint16_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -473,7 +473,7 @@ int32_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char*
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRId32, (int32_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRId32, (int32_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -486,7 +486,7 @@ uint32_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRIu32, (uint32_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRIu32, (uint32_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -499,7 +499,7 @@ int64_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char*
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRId64, (int64_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRId64, (int64_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -512,7 +512,7 @@ uint64_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%" PRIu64, (uint64_t)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%" PRIu64, (uint64_t)data);
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -525,7 +525,7 @@ float_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char*
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%f", pgvictoria_value_to_float(data));
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%f", pgvictoria_value_to_float(data));
    ret = pgvictoria_append(ret, buf);
    return ret;
 }
@@ -538,7 +538,7 @@ double_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%f", pgvictoria_value_to_double(data));
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%f", pgvictoria_value_to_double(data));
    ret = pgvictoria_append(ret, buf);
 
    return ret;
@@ -548,28 +548,26 @@ static char*
 string_to_string_cb(uintptr_t data, int32_t format, char* tag, int indent)
 {
    char* ret = NULL;
-   char* str = (char*) data;
-   char buf[MISC_LENGTH];
+   char* str = (char*)data;
    char* translated_string = NULL;
 
    ret = pgvictoria_indent(ret, tag, indent);
-   memset(buf, 0, MISC_LENGTH);
    if (str == NULL)
    {
       if (format == FORMAT_JSON || format == FORMAT_JSON_COMPACT)
       {
-         snprintf(buf, MISC_LENGTH, "null");
+         ret = pgvictoria_append(ret, "null");
       }
    }
    else if (strlen(str) == 0)
    {
       if (format == FORMAT_JSON || format == FORMAT_JSON_COMPACT)
       {
-         snprintf(buf, MISC_LENGTH, "\"%s\"", str);
+         ret = pgvictoria_append(ret, "\"\"");
       }
       else if (format == FORMAT_TEXT)
       {
-         snprintf(buf, MISC_LENGTH, "''");
+         ret = pgvictoria_append(ret, "''");
       }
    }
    else
@@ -577,15 +575,17 @@ string_to_string_cb(uintptr_t data, int32_t format, char* tag, int indent)
       if (format == FORMAT_JSON || format == FORMAT_JSON_COMPACT)
       {
          translated_string = pgvictoria_escape_string(str);
-         snprintf(buf, MISC_LENGTH, "\"%s\"", translated_string);
+         ret = pgvictoria_append_char(ret, '"');
+         ret = pgvictoria_append(ret, translated_string);
+         ret = pgvictoria_append_char(ret, '"');
          free(translated_string);
       }
       else if (format == FORMAT_TEXT)
       {
-         snprintf(buf, MISC_LENGTH, "%s", str);
+         ret = pgvictoria_append(ret, str);
       }
    }
-   ret = pgvictoria_append(ret, buf);
+
    return ret;
 }
 
@@ -593,9 +593,9 @@ static char*
 bool_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char* tag, int indent)
 {
    char* ret = NULL;
-   bool val = (bool) data;
+   bool val = (bool)data;
    ret = pgvictoria_indent(ret, tag, indent);
-   ret = pgvictoria_append(ret, val?"true":"false");
+   ret = pgvictoria_append(ret, val ? "true" : "false");
    return ret;
 }
 
@@ -607,7 +607,7 @@ char_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char* 
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "'%c'", (char)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "'%c'", (char)data);
    ret = pgvictoria_append(ret, buf);
 
    return ret;
@@ -622,7 +622,7 @@ deque_to_string_cb(uintptr_t data, int32_t format, char* tag, int indent)
 static char*
 art_to_string_cb(uintptr_t data, int32_t format, char* tag, int indent)
 {
-   return pgvictoria_art_to_string((struct art*) data, format, tag, indent);
+   return pgvictoria_art_to_string((struct art*)data, format, tag, indent);
 }
 
 static char*
@@ -639,7 +639,7 @@ mem_to_string_cb(uintptr_t data, int32_t format __attribute__((unused)), char* t
 
    ret = pgvictoria_indent(ret, tag, indent);
    memset(buf, 0, MISC_LENGTH);
-   snprintf(buf, MISC_LENGTH, "%p", (void*)data);
+   pgvictoria_snprintf(buf, MISC_LENGTH, "%p", (void*)data);
    ret = pgvictoria_append(ret, buf);
 
    return ret;

@@ -159,7 +159,7 @@ pgvictoria_log_copyfail_message(struct message* msg)
       return;
    }
 
-   pgvictoria_log_error("COPY-failure: %s", (char*) msg->data);
+   pgvictoria_log_error("COPY-failure: %s", (char*)msg->data);
 }
 
 void
@@ -915,7 +915,7 @@ pgvictoria_query_execute(SSL* ssl, int socket, struct message* msg, struct query
       goto error;
    }
    if (pgvictoria_has_message('T', data, data_size)) /* if the response is RowDescription */
-      {
+   {
       if (pgvictoria_extract_message_from_data('T', data, data_size, &rmsg))
       {
          goto error;
@@ -1402,9 +1402,9 @@ write_message(int socket, struct message* msg)
       else
       {
          pgvictoria_log_debug("Error %d - %zd/%zd (%zd) - %d/%s",
-                            socket,
-                            numbytes, totalbytes, msg->length,
-                            errno, strerror(errno));
+                              socket,
+                              numbytes, totalbytes, msg->length,
+                              errno, strerror(errno));
 
          switch (errno)
          {

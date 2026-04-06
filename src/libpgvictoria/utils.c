@@ -33,6 +33,7 @@
 
 /* system */
 #include <assert.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <err.h>
 #include <errno.h>
@@ -63,10 +64,10 @@
 #endif
 
 #ifndef EVBACKEND_IOURING
-#define EVBACKEND_IOURING  0x00000080U
+#define EVBACKEND_IOURING 0x00000080U
 #endif
 
-#ifdef  HAVE_EXECINFO_H
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
 
@@ -81,49 +82,57 @@ static int string_compare(const void* a, const void* b);
 static int get_permissions(char* from, int* permissions);
 
 int32_t
-pgvictoria_get_request(struct message *msg) {
-  if (msg == NULL || msg->data == NULL || msg->length < 8) {
-    return -1;
-  }
+pgvictoria_get_request(struct message* msg)
+{
+   if (msg == NULL || msg->data == NULL || msg->length < 8)
+   {
+      return -1;
+   }
 
-  return pgvictoria_read_int32(msg->data + 4);
+   return pgvictoria_read_int32(msg->data + 4);
 }
 
 int
-pgvictoria_extract_error_fields(char type, struct message *msg, char **extracted)
+pgvictoria_extract_error_fields(char type, struct message* msg, char** extracted)
 {
-  ssize_t offset = 1 + 4;
-  char *result = NULL;
-  *extracted = NULL;
+   ssize_t offset = 1 + 4;
+   char* result = NULL;
+   *extracted = NULL;
 
-  if (msg == NULL || msg->kind != 'E') {
-    return 1;
-  }
-
-  while (result == NULL && offset < msg->length) {
-    char t = (char)pgvictoria_read_byte(msg->data + offset);
-
-    if (t == '\0') {
+   if (msg == NULL || msg->kind != 'E')
+   {
       return 1;
-    }
+   }
 
-    size_t field_len = strlen(msg->data + offset + 1) + 1;
+   while (result == NULL && offset < msg->length)
+   {
+      char t = (char)pgvictoria_read_byte(msg->data + offset);
 
-    if (type == t) {
-      result = (char *)malloc(field_len);
-      memset(result, 0, field_len);
-      strcpy(result, msg->data + offset + 1);
+      if (t == '\0')
+      {
+         return 1;
+      }
 
-      *extracted = result;
+      size_t field_len = strlen(msg->data + offset + 1) + 1;
 
-      return 0;
-    } else {
-      offset += 1;
-      offset += strlen(msg->data + offset) + 1;
-    }
-  }
+      if (type == t)
+      {
+         result = (char*)malloc(field_len);
+         memset(result, 0, field_len);
+         strcpy(result, msg->data + offset + 1);
 
-  return 1;
+         *extracted = result;
+
+         return 0;
+      }
+      else
+      {
+         offset += 1;
+         offset += strlen(msg->data + offset) + 1;
+      }
+   }
+
+   return 1;
 }
 
 size_t
@@ -146,13 +155,13 @@ pgvictoria_get_aligned_size(size_t size)
 signed char
 pgvictoria_read_byte(void* data)
 {
-   return (signed char) *((char*)data);
+   return (signed char)*((char*)data);
 }
 
 uint8_t
 pgvictoria_read_uint8(void* data)
 {
-   return (uint8_t) *((char*)data);
+   return (uint8_t) * ((char*)data);
 }
 
 int16_t
@@ -238,7 +247,7 @@ pgvictoria_read_uint64(void* data)
 bool
 pgvictoria_read_bool(void* data)
 {
-   return (bool) *((bool*)data);
+   return (bool)*((bool*)data);
 }
 
 void
@@ -535,9 +544,9 @@ pgvictoria_get_home_directory(void)
    char* dir = NULL;
 
 #if defined(HAVE_DARWIN) || defined(HAVE_OSX)
-   #define GET_ENV(name) getenv(name)
+#define GET_ENV(name) getenv(name)
 #else
-   #define GET_ENV(name) secure_getenv(name)
+#define GET_ENV(name) secure_getenv(name)
 #endif
 
    dir = pgvictoria_append(dir, GET_ENV("HOME"));
@@ -798,17 +807,15 @@ pgvictoria_set_proc_title(int argc, char** argv, char* s1, char* s2)
 unsigned int
 pgvictoria_version_as_number(unsigned int major, unsigned int minor, unsigned int patch)
 {
-   return (patch % 100)
-          + (minor % 100) * 100
-          + (major % 100) * 10000;
+   return (patch % 100) + (minor % 100) * 100 + (major % 100) * 10000;
 }
 
 unsigned int
 pgvictoria_version_number(void)
 {
    return pgvictoria_version_as_number(PGVICTORIA_MAJOR_VERSION,
-                                     PGVICTORIA_MINOR_VERSION,
-                                     PGVICTORIA_PATCH_VERSION);
+                                       PGVICTORIA_MINOR_VERSION,
+                                       PGVICTORIA_PATCH_VERSION);
 }
 
 bool
@@ -1418,7 +1425,6 @@ error:
    return 1;
 }
 
-
 void
 pgvictoria_list_directory(char* directory)
 {
@@ -1779,7 +1785,6 @@ pgvictoria_symlink_at_file(char* from, char* to)
    free(dir_path);
 
    return ret;
-
 }
 
 bool
@@ -2191,7 +2196,6 @@ error:
    return 1;
 }
 
-
 static int
 string_compare(const void* a, const void* b)
 {
@@ -2478,7 +2482,7 @@ pgvictoria_get_timestamp_string(struct timespec start_time, struct timespec end_
 
 int
 pgvictoria_convert_base32_to_hex(unsigned char* base32, int base32_length,
-                               unsigned char** hex)
+                                 unsigned char** hex)
 {
    int i = 0;
    char* hex_buf;
@@ -2687,13 +2691,13 @@ parse_command(int argc,
       command_index = default_command_match;
       subcommand = "";
    }
-   else if (command_index == -1)  /* Command was matched, but subcommand was not */
+   else if (command_index == -1) /* Command was matched, but subcommand was not */
    {
       if (subcommand)
       {
          warnx("Unknown subcommand '%s' for command '%s'\n", subcommand, command);
       }
-      else  /* User did not type a subcommand */
+      else /* User did not type a subcommand */
       {
          warnx("Command '%s' requires a subcommand\n", command);
       }
@@ -2729,12 +2733,11 @@ parse_command(int argc,
    {
       parsed->args[i] = argv[i + offset];
    }
-   parsed->args[0] = parsed->args[0] ? parsed->args[0] : (char*) parsed->cmd->default_argument;
+   parsed->args[0] = parsed->args[0] ? parsed->args[0] : (char*)parsed->cmd->default_argument;
 
    /* Warn the user if there is enough information about deprecation */
-   if (parsed->cmd->deprecated
-       && pgvictoria_version_ge(parsed->cmd->deprecated_since_major,
-                              parsed->cmd->deprecated_since_minor, 0))
+   if (parsed->cmd->deprecated && pgvictoria_version_ge(parsed->cmd->deprecated_since_major,
+                                                        parsed->cmd->deprecated_since_minor, 0))
    {
       warnx("command <%s> has been deprecated by <%s> since version %d.%d",
             parsed->cmd->command,
@@ -2768,7 +2771,6 @@ pgvictoria_format_and_append(char* buf, char* format, ...)
    free(formatted_str);
 
    return buf;
-
 }
 
 int
@@ -3048,11 +3050,11 @@ pgvictoria_is_substring(char* a, char* b)
 int
 pgvictoria_resolve_path(char* orig_path, char** new_path)
 {
-   #if defined(HAVE_DARWIN) || defined(HAVE_OSX)
-      #define GET_ENV(name) getenv(name)
-   #else
-      #define GET_ENV(name) secure_getenv(name)
-   #endif
+#if defined(HAVE_DARWIN) || defined(HAVE_OSX)
+#define GET_ENV(name) getenv(name)
+#else
+#define GET_ENV(name) secure_getenv(name)
+#endif
 
    char* res = NULL;
    char* env_res = NULL;
@@ -3073,10 +3075,7 @@ pgvictoria_resolve_path(char* orig_path, char** new_path)
    {
       char* ch = NULL;
 
-      bool valid_env_char = orig_path[idx] == '_'
-                            || (orig_path[idx] >= 'A' && orig_path[idx] <= 'Z')
-                            || (orig_path[idx] >= 'a' && orig_path[idx] <= 'z')
-                            || (orig_path[idx] >= '0' && orig_path[idx] <= '9');
+      bool valid_env_char = orig_path[idx] == '_' || (orig_path[idx] >= 'A' && orig_path[idx] <= 'Z') || (orig_path[idx] >= 'a' && orig_path[idx] <= 'z') || (orig_path[idx] >= '0' && orig_path[idx] <= '9');
       if (in_env && !valid_env_char)
       {
          in_env = false;
@@ -3158,13 +3157,12 @@ error:
    return 1;
 }
 
-__attribute__((unused))
-static bool
+__attribute__((unused)) static bool
 calculate_offset(uint64_t addr, uint64_t* offset, char** filepath)
 {
 #if defined(HAVE_LINUX) && defined(HAVE_EXECINFO_H)
    char line[256];
-   char* start, * end, * base_offset, * filepath_ptr;
+   char *start, *end, *base_offset, *filepath_ptr;
    uint64_t start_addr, end_addr, base_offset_value;
    FILE* fp;
    bool success = false;
@@ -3245,7 +3243,7 @@ pgvictoria_backtrace(void)
 int
 pgvictoria_backtrace_string(char** s)
 {
-#ifdef  HAVE_EXECINFO_H
+#ifdef HAVE_EXECINFO_H
    void* bt[1024];
    char* log_str = NULL;
    size_t bt_size;
@@ -3410,17 +3408,13 @@ pgvictoria_os_kernel_version(char** os, int* kernel_major, int* kernel_minor, in
    if (!bsd)
 
    {
-
       pgvictoria_log_debug("OS: %s | Kernel Version: %d.%d.%d", *os, *kernel_major, *kernel_minor, *kernel_patch);
-
    }
 
    else
 
    {
-
       pgvictoria_log_debug("OS: %s | Version: %d.%d", *os, *kernel_major, *kernel_minor);
-
    }
 
    return 0;
@@ -3530,7 +3524,7 @@ pgvictoria_normalize_path(char* directory_path, char* filename, char* default_pa
       if (strlen(temp_path) >= buffer_size)
       {
          pgvictoria_log_error("Configuration directory path is too long: %s (maximum %zu characters)",
-                            temp_path, buffer_size - 1);
+                              temp_path, buffer_size - 1);
          free(temp_path);
          return 1;
       }
@@ -3556,7 +3550,7 @@ pgvictoria_normalize_path(char* directory_path, char* filename, char* default_pa
          if (strlen(default_path) >= buffer_size)
          {
             pgvictoria_log_error("Default configuration path is too long: %s (maximum %zu characters)",
-                               default_path, buffer_size - 1);
+                                 default_path, buffer_size - 1);
             return 1;
          }
          pgvictoria_log_info("Using default config file: %s", default_path);
@@ -3794,4 +3788,358 @@ pgvictoria_extract_message_from_data(char type, void* data, size_t data_size, st
 
    pgvictoria_log_debug("No message with required type %c extracted", type);
    return 1;
+}
+
+static void
+append_char_bounded(char** out, char c, size_t current_len, size_t cap)
+{
+   if (current_len < cap)
+   {
+      *out = pgvictoria_append_char(*out, c);
+   }
+}
+
+static void
+append_bounded(char** out, const char* s, size_t current_len, size_t cap)
+{
+   if (s == NULL || cap <= current_len)
+   {
+      return;
+   }
+
+   size_t remain = cap - current_len;
+   size_t slen = strlen(s);
+   size_t to_copy = (slen > remain) ? remain : slen;
+
+   if (to_copy == 0)
+   {
+      return;
+   }
+
+   char* chunk = (char*)malloc(to_copy + 1);
+   if (chunk == NULL)
+   {
+      return;
+   }
+
+   memcpy(chunk, s, to_copy);
+   chunk[to_copy] = '\0';
+   *out = pgvictoria_append(*out, chunk);
+   free(chunk);
+}
+
+int
+hvsnprintf(char* buf, size_t n, const char* fmt, va_list ap)
+{
+   size_t cap = 8192;
+   if (n > 0 && (n - 1) < cap)
+   {
+      cap = n - 1;
+   }
+
+   char* out = NULL;
+   const char* p = (fmt != NULL) ? fmt : "";
+   char scratch[128];
+
+   while (*p != '\0')
+   {
+      if (*p != '%')
+      {
+         size_t cur = (out != NULL) ? strlen(out) : 0;
+         append_char_bounded(&out, *p, cur, cap);
+         p++;
+         continue;
+      }
+
+      p++;
+      if (*p == '%')
+      {
+         size_t cur = (out != NULL) ? strlen(out) : 0;
+         append_char_bounded(&out, '%', cur, cap);
+         p++;
+         continue;
+      }
+
+      /* Parse flags (support '0' for zero-padding) */
+      bool flag_zero = false;
+      while (*p == '0')
+      {
+         flag_zero = true;
+         p++;
+      }
+
+      /* Parse width */
+      int width = -1;
+      if (isdigit((unsigned char)*p))
+      {
+         width = 0;
+         while (isdigit((unsigned char)*p))
+         {
+            width = width * 10 + (*p - '0');
+            p++;
+         }
+      }
+
+      /* Parse precision */
+      int precision = -1;
+      if (*p == '.')
+      {
+         p++;
+         if (*p == '*')
+         {
+            precision = va_arg(ap, int);
+            p++;
+         }
+         else
+         {
+            precision = 0;
+            while (isdigit((unsigned char)*p))
+            {
+               precision = precision * 10 + (*p - '0');
+               p++;
+            }
+         }
+         if (precision < 0)
+         {
+            precision = -1;
+         }
+      }
+
+      /* Length modifier */
+      enum { LM_NONE,
+             LM_L,
+             LM_LL,
+             LM_Z } lm = LM_NONE;
+      if (*p == 'l')
+      {
+         p++;
+         if (*p == 'l')
+         {
+            lm = LM_LL;
+            p++;
+         }
+         else
+         {
+            lm = LM_L;
+         }
+      }
+      else if (*p == 'z')
+      {
+         lm = LM_Z;
+         p++;
+      }
+
+      char conv = *p;
+      if (conv == '\0')
+      {
+         break;
+      }
+      p++;
+
+      scratch[0] = '\0';
+
+      switch (conv)
+      {
+         case 's':
+         {
+            char* s = va_arg(ap, char*);
+            if (s == NULL)
+            {
+               s = "(null)";
+            }
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, s, cur, cap);
+            break;
+         }
+         case 'c':
+         {
+            int ch = va_arg(ap, int);
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_char_bounded(&out, (char)ch, cur, cap);
+            break;
+         }
+         case 'd':
+         case 'i':
+         {
+            long long v;
+            if (lm == LM_LL)
+            {
+               v = va_arg(ap, long long);
+            }
+            else if (lm == LM_L)
+            {
+               v = va_arg(ap, long);
+            }
+            else if (lm == LM_Z)
+            {
+               v = (ssize_t)va_arg(ap, ssize_t);
+            }
+            else
+            {
+               v = va_arg(ap, int);
+            }
+
+            if (width >= 0)
+            {
+               (void)snprintf(scratch, sizeof(scratch),
+                              flag_zero ? "%0*lld" : "%*lld", width, v);
+            }
+            else
+            {
+               (void)snprintf(scratch, sizeof(scratch), "%lld", v);
+            }
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, scratch, cur, cap);
+            break;
+         }
+         case 'u':
+         {
+            unsigned long long v;
+            if (lm == LM_LL)
+            {
+               v = va_arg(ap, unsigned long long);
+            }
+            else if (lm == LM_L)
+            {
+               v = va_arg(ap, unsigned long);
+            }
+            else if (lm == LM_Z)
+            {
+               v = (size_t)va_arg(ap, size_t);
+            }
+            else
+            {
+               v = va_arg(ap, unsigned int);
+            }
+
+            if (width >= 0)
+            {
+               (void)snprintf(scratch, sizeof(scratch),
+                              flag_zero ? "%0*llu" : "%*llu", width, v);
+            }
+            else
+            {
+               (void)snprintf(scratch, sizeof(scratch), "%llu", v);
+            }
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, scratch, cur, cap);
+            break;
+         }
+         case 'x':
+         case 'X':
+         {
+            unsigned long long v;
+            if (lm == LM_LL)
+            {
+               v = va_arg(ap, unsigned long long);
+            }
+            else if (lm == LM_L)
+            {
+               v = va_arg(ap, unsigned long);
+            }
+            else if (lm == LM_Z)
+            {
+               v = (size_t)va_arg(ap, size_t);
+            }
+            else
+            {
+               v = va_arg(ap, unsigned int);
+            }
+
+            if (width >= 0)
+            {
+               if (conv == 'x')
+               {
+                  (void)snprintf(scratch, sizeof(scratch),
+                                 flag_zero ? "%0*llx" : "%*llx", width, v);
+               }
+               else
+               {
+                  (void)snprintf(scratch, sizeof(scratch),
+                                 flag_zero ? "%0*llX" : "%*llX", width, v);
+               }
+            }
+            else
+            {
+               (void)snprintf(scratch, sizeof(scratch),
+                              (conv == 'x') ? "%llx" : "%llX", v);
+            }
+
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, scratch, cur, cap);
+            break;
+         }
+         case 'p':
+         {
+            void* ptr = va_arg(ap, void*);
+            (void)snprintf(scratch, sizeof(scratch), "%p", ptr);
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, scratch, cur, cap);
+            break;
+         }
+         case 'f':
+         case 'F':
+         case 'g':
+         case 'G':
+         case 'e':
+         case 'E':
+         {
+            double dv = va_arg(ap, double);
+            (void)snprintf(scratch, sizeof(scratch), "%g", dv);
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_bounded(&out, scratch, cur, cap);
+            break;
+         }
+         default:
+         {
+            size_t cur = (out != NULL) ? strlen(out) : 0;
+            append_char_bounded(&out, '%', cur, cap);
+            cur = (out != NULL) ? strlen(out) : 0;
+            append_char_bounded(&out, conv, cur, cap);
+            break;
+         }
+      }
+   }
+
+   size_t produced_len = (out != NULL) ? strlen(out) : 0;
+
+   if (buf != NULL && n > 0)
+   {
+      size_t to_copy = (produced_len < (n - 1)) ? produced_len : (n - 1);
+      if (to_copy > 0 && out != NULL)
+      {
+         memcpy(buf, out, to_copy);
+      }
+      if (n > 0)
+      {
+         buf[to_copy] = '\0';
+      }
+   }
+
+   if (out != NULL)
+   {
+      free(out);
+   }
+
+   return (int)produced_len;
+}
+
+int
+pgvictoria_snprintf(char* buf, size_t n, const char* fmt, ...)
+{
+   va_list ap;
+   va_list ap_copy;
+   int ret;
+
+   va_start(ap, fmt);
+   va_copy(ap_copy, ap);
+   ret = vsnprintf(buf, n, fmt, ap_copy);
+   va_end(ap_copy);
+   if (ret < 0)
+   {
+      ret = hvsnprintf(buf, n, fmt, ap);
+   }
+   va_end(ap);
+
+   return ret;
 }

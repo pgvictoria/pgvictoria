@@ -1138,6 +1138,17 @@ pgvictoria_extract_message_offset(size_t offset, void* data, struct message** ex
 int
 pgvictoria_extract_message_from_data(char type, void* data, size_t data_size, struct message** extracted);
 
+/**
+ * Robust string appending via vsnprintf logic
+ * @param buf The buffer
+ * @param n The max size
+ * @param fmt The format string
+ * @param ... additional arguments
+ * @return the character count
+ */
+int
+pgvictoria_snprintf(char* buf, size_t n, const char* fmt, ...);
+
 #ifdef __cplusplus
 }
 #endif

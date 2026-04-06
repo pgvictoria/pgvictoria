@@ -13,8 +13,8 @@ function format_files()
 format_files "src/*.c"
 format_files "src/include/*.h"
 format_files "src/include/walfile/*.h"
-format_files "src/libpgmoneta/*.c"
-format_files "src/libpgmoneta/walfile/*.c"
+format_files "src/libpgvictoria/*.c"
+format_files "src/libpgvictoria/walfile/*.c"
 
 format_files "test/*.c"
 format_files "test/include/*.h"

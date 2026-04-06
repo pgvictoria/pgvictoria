@@ -50,7 +50,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define NAME "configuration"
+#define NAME        "configuration"
 #define LINE_LENGTH 512
 
 static int extract_syskey_value(char* str, char** key, char** value);
@@ -184,9 +184,7 @@ pgvictoria_read_main_configuration(void* shm, char* filename)
          }
          else
          {
-            if (pgvictoria_starts_with(trimmed_line, "unix_socket_dir")
-                || pgvictoria_starts_with(trimmed_line, "log_path")
-                || pgvictoria_starts_with(trimmed_line, "pidfile"))
+            if (pgvictoria_starts_with(trimmed_line, "unix_socket_dir") || pgvictoria_starts_with(trimmed_line, "log_path") || pgvictoria_starts_with(trimmed_line, "pidfile"))
             {
                extract_syskey_value(trimmed_line, &key, &value);
             }
@@ -559,7 +557,6 @@ pgvictoria_validate_main_configuration(void* shm)
          pgvictoria_log_fatal("No user defined for %s", config->common.servers[i].name);
          return 1;
       }
-
    }
 
    return 0;
@@ -599,7 +596,6 @@ pgvictoria_read_users_configuration(void* shm, char* filename)
 
    while (fgets(line, sizeof(line), file))
    {
-
       if (!is_empty_string(line))
       {
          if (!remove_leading_whitespace_and_comments(line, &trimmed_line))
@@ -656,7 +652,6 @@ pgvictoria_read_users_configuration(void* shm, char* filename)
          decoded = NULL;
 
          index++;
-
       }
       free(trimmed_line);
       trimmed_line = NULL;
