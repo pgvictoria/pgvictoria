@@ -105,6 +105,17 @@ bool
 pgvictoria_art_contains_key(struct art* t, char* key);
 
 /**
+ * Prefix search for a string in the ART tree
+ * @param t The tree
+ * @param prefix The prefix to search for
+ * @param matches [out] Array of matching strings
+ * @param max_matches Maximum number of matches to return
+ * @return Number of matches (-1 on error)
+ */
+int
+pgvictoria_art_prefix_search(struct art* t, char* prefix, char*** matches, int max_matches);
+
+/**
  * Searches for a value in the ART tree
  * @param t The tree
  * @param key The key
