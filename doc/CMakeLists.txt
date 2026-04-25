@@ -41,4 +41,17 @@ if (DOCS)
       )
     endif()
   endif()
+
+  #
+  # Man pages
+  #
+  if (RST2MAN_EXECUTABLE)
+    add_custom_target(pgvictoria-config.1 ALL
+      COMMAND ${RST2MAN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/man/pgvictoria-config.1.rst pgvictoria-config.1
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating pgvictoria-config.1"
+      VERBATIM
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pgvictoria-config.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  endif()
 endif()

@@ -279,3 +279,17 @@ endif()
 target_link_libraries(pgvictoria-bin pgvictoria)
 
 install(TARGETS pgvictoria-bin DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+#
+# Build pgvictoria-config-bin
+#
+add_executable(pgvictoria-config-bin config.c)
+if (CMAKE_C_LINK_PIE_SUPPORTED)
+  set_target_properties(pgvictoria-config-bin PROPERTIES LINKER_LANGUAGE C OUTPUT_NAME pgvictoria-config POSITION_INDEPENDENT_CODE TRUE)
+else()
+  set_target_properties(pgvictoria-config-bin PROPERTIES LINKER_LANGUAGE C OUTPUT_NAME pgvictoria-config POSITION_INDEPENDENT_CODE FALSE)
+endif()
+if(NOT MSVC)
+  target_compile_options(pgvictoria-config-bin PRIVATE -Wall -Wextra -Werror)
+endif()
+install(TARGETS pgvictoria-config-bin DESTINATION ${CMAKE_INSTALL_BINDIR})
