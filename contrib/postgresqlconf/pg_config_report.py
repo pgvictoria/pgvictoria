@@ -33,7 +33,7 @@ import os
 import subprocess
 import time
 
-SUPPORTED_VERSIONS = [14, 15, 16, 17, 18]
+SUPPORTED_VERSIONS = [14, 15, 16, 17, 18, 19]
 
 def parse_config(content):
     """Parses postgresql.conf format content."""
@@ -78,7 +78,7 @@ def parse_show_all(content):
     # Parse data lines
     for line in lines[data_start:]:
         line = line.strip()
-        if not line or line.startswith('(') or 'row' in line.lower():  # Skip footer
+        if not line or line.startswith('('):  # Skip blank lines and the "(N rows)" footer
             continue
 
         # Split strictly by pipe character which separates columns in psql output
@@ -96,7 +96,7 @@ def generate_header(config, version, filename):
     guard = filename.replace('.', '_').replace('-', '_').upper()
     json_str = json.dumps(config, indent=2)
     # Escape for C string literal
-    c_json = json_str.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n"\n  "')
+    c_json = json_str.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n"\n   "')
 
     header = f"""/*
  * Copyright (C) 2026 The pgvictoria community
@@ -129,8 +129,8 @@ def generate_header(config, version, filename):
 #ifndef {guard}_H
 #define {guard}_H
 
-static const char* pg{version}_json = 
-  "{c_json}";
+static const char* pg{version}_json =
+   "{c_json}";
 
 #endif
 """
@@ -247,11 +247,15 @@ def main():
 
         success_count = 0
         for v in SUPPORTED_VERSIONS:
-            content = get_config_from_docker(v)
+            try:
+                content = get_config_from_docker(v)
+            except subprocess.CalledProcessError:
+                print(f"Warning: skipping PostgreSQL {v} (no postgres:{v} Docker image available).", file=sys.stderr)
+                continue
             output_path = os.path.join(include_dir, f"pg{v}.h")
             if process_content(content, v, output_path):
                 success_count += 1
-        
+
         print(f"\nBatch processing complete. Successfully generated {success_count}/{len(SUPPORTED_VERSIONS)} headers.")
         sys.exit(0 if success_count == len(SUPPORTED_VERSIONS) else 1)
 

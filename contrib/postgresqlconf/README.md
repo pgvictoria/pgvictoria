@@ -1,6 +1,6 @@
 # PostgreSQL Configuration Reporting Tool
 
-A tool to convert PostgreSQL configurations into C header files with embedded JSON. It generates the official baseline configurations for PostgreSQL 14–18, allowing pgvictoria to compare active settings against default values.
+A tool to convert PostgreSQL configurations into C header files with embedded JSON. It generates the official baseline configurations for PostgreSQL 14–19, allowing pgvictoria to compare active settings against default values.
 
 ## Usage
 
@@ -8,7 +8,7 @@ The script `pg_config_report.py` supports several modes of operation.
 
 ### 1. Generate All Baselines (Docker)
 
-To automatically generate C headers for all supported PostgreSQL versions (14, 15, 16, 17, 18) using Docker containers:
+To automatically generate C headers for all supported PostgreSQL versions (14, 15, 16, 17, 18, 19) using Docker containers:
 
 ```bash
 python pg_config_report.py

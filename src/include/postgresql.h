@@ -43,7 +43,7 @@ extern "C" {
 /**
  * Get the PostgreSQL baseline configuration for a specific version.
  * 
- * @param version The PostgreSQL version (e.g. 14, 15, 16, 17, 18)
+ * @param version The PostgreSQL version (e.g. 14, 15, 16, 17, 18, 19)
  * @return The JSON baseline object, or NULL if the version is not supported or parsing fails.
  */
 struct json*

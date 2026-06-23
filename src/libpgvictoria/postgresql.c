@@ -38,6 +38,7 @@
 #include <pg16.h>
 #include <pg17.h>
 #include <pg18.h>
+#include <pg19.h>
 
 /* system */
 #include <dirent.h>
@@ -75,7 +76,8 @@ pgvictoria_get_supported_version_info(int index, const char** json_str)
       {15, pg15_json},
       {16, pg16_json},
       {17, pg17_json},
-      {18, pg18_json}};
+      {18, pg18_json},
+      {19, pg19_json}};
 
    if (index >= 0 && index < (int)(sizeof(baselines) / sizeof(baselines[0])))
    {
@@ -266,7 +268,7 @@ check_baseline_in_dirs(int version)
 /**
  * Get the PostgreSQL baseline configuration for a specific version.
  * 
- * @param version The PostgreSQL version (e.g. 14, 15, 16, 17, 18)
+ * @param version The PostgreSQL version (e.g. 14, 15, 16, 17, 18, 19)
  * @return The JSON baseline object, or NULL if the version is not supported or parsing fails.
  */
 struct json*
