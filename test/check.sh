@@ -56,10 +56,11 @@ do_setup() {
    if [ -z "$PGVICTORIA_TEST_NO_BUILD" ]; then
       echo "Building pgvictoria"
       mkdir -p "$PROJECT_DIRECTORY/build"
-      cd "$PROJECT_DIRECTORY/build"
-      cmake -DCMAKE_BUILD_TYPE=Debug -Dcheck=TRUE ..
-      make -j$(nproc)
-      cd ..
+      (
+         cd "$PROJECT_DIRECTORY/build"
+         cmake -DCMAKE_BUILD_TYPE=Debug -Dcheck=TRUE ..
+         make -j$(nproc)
+      )
    fi
 }
 

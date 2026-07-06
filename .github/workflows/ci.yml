@@ -73,7 +73,7 @@ jobs:
 
       - name: Build Project
         run: |
-          mkdir build
+          mkdir -p build
           cd build
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             export CC=/usr/bin/gcc
@@ -86,13 +86,8 @@ jobs:
             cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDOCS=FALSE -Dcheck=TRUE ..
           fi
           make -j$(nproc)
-        working-directory: /home/runner/work/pgvictoria/pgvictoria/
 
       - name: Run Tests
         run: |
           export PGVICTORIA_TEST_NO_BUILD=1
           ./test/check.sh
-        working-directory: /home/runner/work/pgvictoria/pgvictoria/
-
-
-

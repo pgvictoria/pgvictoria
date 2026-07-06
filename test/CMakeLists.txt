@@ -94,9 +94,6 @@ if (check)
     ${OPENSSL_INCLUDE_DIR}
     ${LIBXML2_INCLUDE_DIRS})
 
-  target_compile_definitions(pgvictoria-test PRIVATE
-    TEST_CONF_DIR="${CMAKE_SOURCE_DIR}/test/conf")
-
   target_link_libraries(pgvictoria-test pthread rt m pgvictoria)
 
   add_custom_target(custom_clean
