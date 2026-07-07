@@ -28,6 +28,7 @@
 
 #include <report.h>
 #include <deque.h>
+#include <guc.h>
 #include <html_report.h>
 #include <markdown.h>
 #include <security.h>
@@ -236,15 +237,11 @@ report_add_diff_item(struct deque* items, struct json* baseline, char* key, char
             default_val_str = pgvictoria_value_to_string(v, FORMAT_TEXT, NULL, 0);
             if (default_val_str)
             {
+               bool modified = false;
+
                def_val = default_val_str;
-               if (strcmp(default_val_str, cur_val) == 0)
-               {
-                  status_text = "Default";
-               }
-               else
-               {
-                  status_text = "Modified";
-               }
+               pgvictoria_check_guc((char*)disp_key, type, default_val_str, (char*)cur_val, &modified);
+               status_text = modified ? "Modified" : "Default";
             }
             pgvictoria_value_destroy(v);
          }
