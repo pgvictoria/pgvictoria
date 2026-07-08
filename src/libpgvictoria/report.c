@@ -121,7 +121,7 @@ detect_pg_version(void)
    return ver;
 }
 
-static void
+static int
 trim_and_extract_key_value(char* line, char* key, char* value)
 {
    char* p = line;
@@ -139,7 +139,7 @@ trim_and_extract_key_value(char* line, char* key, char* value)
    /* Skip comments or empty lines */
    if (*p == '#' || *p == '\0' || *p == '\r' || *p == '\n')
    {
-      return;
+      return 1;
    }
 
    start_key = p;
@@ -150,9 +150,13 @@ trim_and_extract_key_value(char* line, char* key, char* value)
    }
 
    key_len = p - start_key;
-   if (key_len == 0 || key_len >= 128)
+   if (key_len == 0)
    {
-      return;
+      return -3;
+   }
+   if (key_len >= 128)
+   {
+      return -4;
    }
    memcpy(key, start_key, key_len);
    key[key_len] = '\0';
@@ -166,7 +170,7 @@ trim_and_extract_key_value(char* line, char* key, char* value)
    /* If there is a comment at the end of the line, or it's empty, skip */
    if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#')
    {
-      return;
+      return -1;
    }
 
    /* Parse value, handling quotes */
@@ -178,6 +182,10 @@ trim_and_extract_key_value(char* line, char* key, char* value)
       while (*p && *p != quote_char && *p != '\r' && *p != '\n')
       {
          p++;
+      }
+      if (*p != quote_char)
+      {
+         return -2;
       }
       end_val = p;
    }
@@ -192,12 +200,18 @@ trim_and_extract_key_value(char* line, char* key, char* value)
    }
 
    val_len = end_val - start_val;
-   if (val_len <= 0 || val_len >= 1024)
+   if (val_len <= 0)
    {
-      return;
+      return -1;
+   }
+   if (val_len >= 1024)
+   {
+      return -5;
    }
    memcpy(value, start_val, val_len);
    value[val_len] = '\0';
+
+   return 0;
 }
 
 /*
@@ -637,15 +651,40 @@ pgvictoria_report_file(char* filename, enum pgvictoria_output_format format, enu
    char key[128];
    char value[1024];
 
+   int line_number = 0;
    while (fgets(line, sizeof(line), file))
    {
+      line_number++;
       memset(key, 0, sizeof(key));
       memset(value, 0, sizeof(value));
-      trim_and_extract_key_value(line, key, value);
+      int status = trim_and_extract_key_value(line, key, value);
 
-      if (strlen(key) > 0 && strlen(value) > 0)
+      if (status == 0)
       {
          report_add_diff_item(items, baseline, key, value, skip_defaults);
+      }
+      else if (status < 0)
+      {
+         if (status == -1)
+         {
+            warnx("Warning: Line %d: configuration parameter '%s' has no value, skipping", line_number, key);
+         }
+         else if (status == -2)
+         {
+            warnx("Warning: Line %d: configuration parameter '%s' has an unclosed quote, skipping", line_number, key);
+         }
+         else if (status == -3)
+         {
+            warnx("Warning: Line %d: invalid syntax, skipping line", line_number);
+         }
+         else if (status == -4)
+         {
+            warnx("Warning: Line %d: configuration parameter key name is too long, skipping", line_number);
+         }
+         else if (status == -5)
+         {
+            warnx("Warning: Line %d: configuration parameter value is too long, skipping", line_number);
+         }
       }
    }
 
