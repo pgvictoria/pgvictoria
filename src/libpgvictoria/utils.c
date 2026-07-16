@@ -50,6 +50,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <sys/statvfs.h>
@@ -597,6 +598,8 @@ pgvictoria_get_password(void)
    memset(result, 0, strlen(p) + 1);
 
    memcpy(result, &p, strlen(p));
+
+   pgvictoria_cleanse(p, sizeof(p));
 
    return result;
 }
@@ -4161,14 +4164,9 @@ pgvictoria_snprintf(char* buf, size_t n, const char* fmt, ...)
 void
 pgvictoria_cleanse(void* data, size_t size)
 {
-   if (data == NULL || size == 0)
+   if (data != NULL && size > 0)
    {
-      return;
-   }
-   volatile unsigned char* p = (volatile unsigned char*)data;
-   while (size--)
-   {
-      *p++ = 0;
+      OPENSSL_cleanse(data, size);
    }
 }
 

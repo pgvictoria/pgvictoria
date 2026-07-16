@@ -114,6 +114,25 @@ pgvictoria-cli -c pgvictoria.conf -pg 18 -o report.txt report /etc/postgresql/18
 
 See the **CLI reporting engine** chapter for more information.
 
+## Administration
+
+[**pgvictoria**][pgvictoria] has an administration tool called `pgvictoria-admin`, which is used to manage user registrations and encrypted passwords for target servers.
+
+First, create or update the master key file:
+``` sh
+pgvictoria-admin master-key
+```
+
+Next, add a user and configure their password (which will be encrypted using the master key and written to `pgvictoria_users.conf`):
+``` sh
+pgvictoria-admin -f pgvictoria_users.conf -U username user add
+```
+
+This users file can then be supplied to `pgvictoria-cli` using the `-u` or `--users` flag:
+``` sh
+pgvictoria-cli -u pgvictoria_users.conf -c pgvictoria.conf -o report.txt report
+```
+
 ## Closing
 
 The [**pgvictoria**][pgvictoria] community hopes that you find

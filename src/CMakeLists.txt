@@ -309,3 +309,17 @@ endif()
 target_link_libraries(pgvictoria-cli-bin pgvictoria)
 
 install(TARGETS pgvictoria-cli-bin DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+#
+# Build pgvictoria-admin
+#
+add_executable(pgvictoria-admin-bin admin.c)
+if (CMAKE_C_LINK_PIE_SUPPORTED)
+  set_target_properties(pgvictoria-admin-bin PROPERTIES LINKER_LANGUAGE C OUTPUT_NAME pgvictoria-admin POSITION_INDEPENDENT_CODE TRUE)
+else()
+  set_target_properties(pgvictoria-admin-bin PROPERTIES LINKER_LANGUAGE C OUTPUT_NAME pgvictoria-admin POSITION_INDEPENDENT_CODE FALSE)
+endif()
+target_link_libraries(pgvictoria-admin-bin pgvictoria)
+
+install(TARGETS pgvictoria-admin-bin DESTINATION ${CMAKE_INSTALL_BINDIR})
+

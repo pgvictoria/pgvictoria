@@ -3,7 +3,7 @@ if (RST2MAN_FOUND)
   add_custom_target(man ALL)
 
   # man page definitions
-  set(MAN_PAGES pgvictoria-config.1 pgvictoria-cli.1)
+  set(MAN_PAGES pgvictoria-config.1 pgvictoria-cli.1 pgvictoria-admin.1)
   set(MAN_DST_FILES)
 
   # Generate man pages

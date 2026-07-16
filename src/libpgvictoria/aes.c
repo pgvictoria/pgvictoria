@@ -124,16 +124,24 @@ pgvictoria_encrypt(char* plaintext, char* password, char** ciphertext, int* ciph
 {
    unsigned char key[EVP_MAX_KEY_LENGTH];
    unsigned char iv[EVP_MAX_IV_LENGTH];
+   int ret;
 
    memset(&key, 0, sizeof(key));
    memset(&iv, 0, sizeof(iv));
 
    if (derive_key_iv(password, key, iv, mode) != 0)
    {
+      pgvictoria_cleanse(key, sizeof(key));
+      pgvictoria_cleanse(iv, sizeof(iv));
       return 1;
    }
 
-   return aes_encrypt(plaintext, key, iv, ciphertext, ciphertext_length, mode);
+   ret = aes_encrypt(plaintext, key, iv, ciphertext, ciphertext_length, mode);
+
+   pgvictoria_cleanse(key, sizeof(key));
+   pgvictoria_cleanse(iv, sizeof(iv));
+
+   return ret;
 }
 
 int
@@ -141,16 +149,24 @@ pgvictoria_decrypt(char* ciphertext, int ciphertext_length, char* password, char
 {
    unsigned char key[EVP_MAX_KEY_LENGTH];
    unsigned char iv[EVP_MAX_IV_LENGTH];
+   int ret;
 
    memset(&key, 0, sizeof(key));
    memset(&iv, 0, sizeof(iv));
 
    if (derive_key_iv(password, key, iv, mode) != 0)
    {
+      pgvictoria_cleanse(key, sizeof(key));
+      pgvictoria_cleanse(iv, sizeof(iv));
       return 1;
    }
 
-   return aes_decrypt(ciphertext, ciphertext_length, key, iv, plaintext, mode);
+   ret = aes_decrypt(ciphertext, ciphertext_length, key, iv, plaintext, mode);
+
+   pgvictoria_cleanse(key, sizeof(key));
+   pgvictoria_cleanse(iv, sizeof(iv));
+
+   return ret;
 }
 
 // [private]
@@ -291,7 +307,11 @@ error:
       EVP_CIPHER_CTX_free(ctx);
    }
 
-   free(pt);
+   if (pt != NULL)
+   {
+      pgvictoria_cleanse(pt, size);
+      free(pt);
+   }
 
    return 1;
 }
