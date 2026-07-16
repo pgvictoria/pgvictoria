@@ -34,6 +34,7 @@
 #include <report.h>
 #include <postgresql.h>
 #include <shmem.h>
+#include <suggest.h>
 #include <utils.h>
 
 #include <err.h>
@@ -44,6 +45,7 @@
 
 #define ACTION_UNKNOWN 0
 #define ACTION_REPORT  1
+#define ACTION_SUGGEST 2
 
 static bool
 load_config(void* shmem, const char* default_path, char* user_path, char** resolved_path, int (*read_func)(void*, char*), const char* label)
@@ -89,11 +91,13 @@ usage(void)
    printf("\n");
    printf("Usage:\n");
    printf("  pgvictoria-cli [ OPTIONS ] report [ CONFIG_FILE ]\n");
+   printf("  pgvictoria-cli [ OPTIONS ] suggest\n");
    printf("\n");
    printf("Commands:\n");
    printf("  report                       Generate a configuration report against the version baseline\n");
    printf("                                 no arguments  - scan the live server (online mode)\n");
    printf("                                 CONFIG_FILE   - compare a postgresql.conf file (offline mode)\n");
+   printf("  suggest                      Generate a postgresql.conf based on system hardware\n");
    printf("\n");
    printf("Options:\n");
    printf("  -c, --config CONFIG_FILE      Set the path to the pgvictoria.conf file\n");
@@ -106,6 +110,8 @@ usage(void)
    printf("  -f, --format FORMAT           Report format: text|html|md (default: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
    printf("  -o, --output OUTPUT_FILE      Write the report to OUTPUT_FILE (required)\n");
+   printf("  -w, --workload WORKLOAD       Workload type: oltp|olap|mixed|desktop (default: oltp)\n");
+   printf("  -M, --max-connections CONNS   Maximum connections (default: 100)\n");
    printf("  -V, --version                 Display version information\n");
    printf("  -?, --help                    Display help\n");
    printf("\n");
@@ -132,6 +138,8 @@ main(int argc, char** argv)
    enum pgvictoria_output_format output_format = PGVICTORIA_OUTPUT_TEXT;
    enum pgvictoria_report_type report_type = PGVICTORIA_REPORT_CHANGED;
    char* output_file = NULL;
+   enum pgvictoria_workload workload = PGVICTORIA_WORKLOAD_OLTP;
+   int max_connections = 100;
 
    cli_option options[] = {
       {"c", "config", true},
@@ -146,6 +154,8 @@ main(int argc, char** argv)
       {"f", "format", true},
       {"t", "type", true},
       {"o", "output", true},
+      {"w", "workload", true},
+      {"M", "max-connections", true},
    };
 
    struct pgvictoria_command command_table[] = {
@@ -156,6 +166,14 @@ main(int argc, char** argv)
          .action = ACTION_REPORT,
          .deprecated = false,
          .log_message = "report",
+      },
+      {
+         .command = "suggest",
+         .subcommand = "",
+         .accepted_argument_count = {0, 0},
+         .action = ACTION_SUGGEST,
+         .deprecated = false,
+         .log_message = "suggest",
       }};
 
    cli_result results[sizeof(options) / sizeof(options[0])];
@@ -271,6 +289,31 @@ main(int argc, char** argv)
             exit(1);
          }
          output_file = optarg;
+      }
+      else if (!strcmp(optname, "w") || !strcmp(optname, "workload"))
+      {
+         if (!strcmp(optarg, "oltp"))
+            workload = PGVICTORIA_WORKLOAD_OLTP;
+         else if (!strcmp(optarg, "olap"))
+            workload = PGVICTORIA_WORKLOAD_OLAP;
+         else if (!strcmp(optarg, "mixed"))
+            workload = PGVICTORIA_WORKLOAD_MIXED;
+         else if (!strcmp(optarg, "desktop"))
+            workload = PGVICTORIA_WORKLOAD_DESKTOP;
+         else
+         {
+            warnx("pgvictoria-cli: Unsupported workload: %s", optarg);
+            exit(1);
+         }
+      }
+      else if (!strcmp(optname, "M") || !strcmp(optname, "max-connections"))
+      {
+         if (!pgvictoria_is_number(optarg, 10))
+         {
+            warnx("pgvictoria-cli: Invalid max connections: %s", optarg);
+            exit(1);
+         }
+         max_connections = pgvictoria_atoi(optarg);
       }
       else if (!strcmp(optname, "V") || !strcmp(optname, "version"))
       {
@@ -440,6 +483,28 @@ main(int argc, char** argv)
             goto error;
          }
       }
+   }
+   else if (parsed.cmd->action == ACTION_SUGGEST)
+   {
+      if (output_file == NULL || output_file[0] == '\0')
+      {
+         warnx("pgvictoria-cli: -o/--output is required for suggest");
+         goto error;
+      }
+
+      struct pgvictoria_hw_info hw;
+      if (pgvictoria_detect_hardware(&hw))
+      {
+         warnx("pgvictoria-cli: Failed to detect hardware");
+         goto error;
+      }
+
+      if (pgvictoria_suggest(&hw, workload, override_version ? override_version : 14, max_connections, output_file, output_format))
+      {
+         warnx("pgvictoria-cli: Failed to generate suggest configuration");
+         goto error;
+      }
+      printf("Successfully suggested configuration to %s\n", output_file);
    }
    else
    {
