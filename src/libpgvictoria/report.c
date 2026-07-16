@@ -299,24 +299,25 @@ report_add_diff_item(struct deque* items, struct json* baseline, char* key, char
 
 /*
  * Render the diff deque as a plain-text table to the given stream. Shared by both
- * the file and online datasources; mode_desc fills the report header (e.g. "Online
- * Mode" or "File Mode: <path>"). Every row in the deque is printed; which rows the
- * deque contains (all vs. non-default only) is decided upstream at deque formation.
+ * the file and online datasources; scope_label/scope_value name what was audited
+ * ("File" plus a path, or "Online" plus a host:port). Every row in the deque is
+ * printed; which rows the deque contains (all vs. non-default only) is decided
+ * upstream at deque formation.
  */
 static void
-report_print_text(FILE* out, struct deque* items, int version, const char* mode_desc)
+report_print_text(FILE* out, struct deque* items, int version, const char* scope_label, const char* scope_value)
 {
-   fprintf(out, "\nPostgreSQL %d Configuration Difference Report\n", version);
-   if (mode_desc)
+   fprintf(out, "\nPostgreSQL %d Configuration Difference Report\n\n", version);
+   if (scope_label && scope_value)
    {
-      fprintf(out, "Report Scope: %s\n", mode_desc);
+      fprintf(out, "%-9s%s\n", scope_label, scope_value);
    }
-   fprintf(out, "Baseline Version: PostgreSQL %d\n", version);
+   fprintf(out, "%-9sPostgreSQL %d\n", "Version", version);
    char* os_name = NULL;
    int k_major = 0, k_minor = 0, k_patch = 0;
    if (pgvictoria_os_kernel_version(&os_name, &k_major, &k_minor, &k_patch) == 0)
    {
-      fprintf(out, "System: %s %d.%d.%d\n", os_name, k_major, k_minor, k_patch);
+      fprintf(out, "%-9s%s %d.%d.%d\n", "System", os_name, k_major, k_minor, k_patch);
       free(os_name);
    }
    fprintf(out, "===================================================================================================\n");
@@ -338,11 +339,11 @@ report_print_text(FILE* out, struct deque* items, int version, const char* mode_
 /*
  * Render the diff deque in the requested format to the requested destination.
  * Shared by both the file and online datasources after they build their (identical)
- * deque. An output path (-o) is required for every format; mode_desc fills the
- * report header/metadata. Returns 0 on success, otherwise 1.
+ * deque. An output path (-o) is required for every format; scope_label/scope_value
+ * fill the report header/metadata. Returns 0 on success, otherwise 1.
  */
 static int
-report_render(struct deque* items, int version, enum pgvictoria_output_format format, char* output_file, const char* mode_desc)
+report_render(struct deque* items, int version, enum pgvictoria_output_format format, char* output_file, const char* scope_label, const char* scope_value)
 {
    if (output_file == NULL || output_file[0] == '\0')
    {
@@ -361,11 +362,11 @@ report_render(struct deque* items, int version, enum pgvictoria_output_format fo
 
    if (format == PGVICTORIA_OUTPUT_MD)
    {
-      ret = pgvictoria_generate_markdown_report(resolved_output, version, items, mode_desc);
+      ret = pgvictoria_generate_markdown_report(resolved_output, version, items, scope_label, scope_value);
    }
    else if (format == PGVICTORIA_OUTPUT_HTML)
    {
-      ret = pgvictoria_generate_html_report(resolved_output, version, items, mode_desc);
+      ret = pgvictoria_generate_html_report(resolved_output, version, items, scope_label, scope_value);
    }
    else
    {
@@ -380,7 +381,7 @@ report_render(struct deque* items, int version, enum pgvictoria_output_format fo
       }
       else
       {
-         report_print_text(out, items, version, mode_desc);
+         report_print_text(out, items, version, scope_label, scope_value);
          fclose(out);
          printf("Report successfully generated to %s\n", resolved_output);
       }
@@ -492,7 +493,10 @@ pgvictoria_report_online(int server, enum pgvictoria_output_format format, enum 
    }
 
    /* Render the deque in the requested format */
-   ret = report_render(items, version, format, output_file, "Online Mode");
+   char endpoint[MISC_LENGTH + 8];
+   pgvictoria_snprintf(endpoint, sizeof(endpoint), "%s:%d", srv->host, srv->port);
+
+   ret = report_render(items, version, format, output_file, "Online", endpoint);
 
    pgvictoria_deque_destroy(items);
 
@@ -691,10 +695,7 @@ pgvictoria_report_file(char* filename, enum pgvictoria_output_format format, enu
    fclose(file);
    pgvictoria_json_destroy(baseline);
 
-   char mode_desc[MAX_PATH + 16];
-   snprintf(mode_desc, sizeof(mode_desc), "File Mode: %s", resolved_filename);
-
-   ret = report_render(items, version, format, output_file, mode_desc);
+   ret = report_render(items, version, format, output_file, "File", resolved_filename);
 
    /* Cleanup comparison list */
    pgvictoria_deque_destroy(items);

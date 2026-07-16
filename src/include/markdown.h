@@ -38,10 +38,10 @@
  * @param output_md_path The destination path of the Markdown file.
  * @param version The resolved PostgreSQL version.
  * @param items The deque of comparison results.
- * @param scope Human-readable description of what was audited (e.g. "Online Mode"
- *              or "File Mode: <path>"), recorded in the report metadata.
+ * @param scope_label What kind of source was audited ("File" or "Online").
+ * @param scope_value Which source it was: a configuration file path, or a host:port.
  * @return 0 upon success, otherwise 1.
  */
-int pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope);
+int pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope_label, const char* scope_value);
 
 #endif

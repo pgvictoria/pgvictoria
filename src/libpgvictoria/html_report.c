@@ -40,7 +40,7 @@
 #include <libxml/HTMLtree.h>
 
 int
-pgvictoria_generate_html_report(const char* output_html_path, int version, struct deque* items, const char* scope)
+pgvictoria_generate_html_report(const char* output_html_path, int version, struct deque* items, const char* scope_label, const char* scope_value)
 {
    pgvictoria_mkdir_parent(output_html_path);
 
@@ -92,12 +92,19 @@ pgvictoria_generate_html_report(const char* output_html_path, int version, struc
       "  text-transform: uppercase;\n"
       "  letter-spacing: 0.5px;\n"
       "}\n"
-      ".metadata {\n"
+      "table.metadata {\n"
+      "  width: auto;\n"
+      "  margin: 0 0 30px 0;\n"
       "  font-size: 14px;\n"
       "  color: #666666;\n"
-      "  margin-bottom: 30px;\n"
-      "  display: flex;\n"
-      "  gap: 20px;\n"
+      "}\n"
+      "table.metadata td {\n"
+      "  padding: 4px 16px 4px 0;\n"
+      "  border-bottom: none;\n"
+      "}\n"
+      "table.metadata td:first-child {\n"
+      "  font-weight: 700;\n"
+      "  color: #111111;\n"
       "}\n"
       "table {\n"
       "  width: 100%;\n"
@@ -176,28 +183,33 @@ pgvictoria_generate_html_report(const char* output_html_path, int version, struc
    pgvictoria_snprintf(title_text, sizeof(title_text), "PostgreSQL %d Configuration Difference Report", version);
    xmlNewChild(container, NULL, BAD_CAST "h1", BAD_CAST title_text);
 
-   /* Metadata block */
-   xmlNodePtr metadata_div = xmlNewChild(container, NULL, BAD_CAST "div", NULL);
-   xmlNewProp(metadata_div, BAD_CAST "class", BAD_CAST "metadata");
+   /* Metadata block: a label/value table describing what was audited */
+   xmlNodePtr metadata_table = xmlNewChild(container, NULL, BAD_CAST "table", NULL);
+   xmlNewProp(metadata_table, BAD_CAST "class", BAD_CAST "metadata");
+   xmlNodePtr metadata_body = xmlNewChild(metadata_table, NULL, BAD_CAST "tbody", NULL);
 
-   if (scope)
+   if (scope_label && scope_value)
    {
-      char scope_meta[MAX_PATH + 32];
-      pgvictoria_snprintf(scope_meta, sizeof(scope_meta), "Report Scope: %s", scope);
-      xmlNewChild(metadata_div, NULL, BAD_CAST "span", BAD_CAST scope_meta);
+      xmlNodePtr scope_row = xmlNewChild(metadata_body, NULL, BAD_CAST "tr", NULL);
+      xmlNewChild(scope_row, NULL, BAD_CAST "td", BAD_CAST scope_label);
+      xmlNewChild(scope_row, NULL, BAD_CAST "td", BAD_CAST scope_value);
    }
 
    char baseline_meta[128];
-   pgvictoria_snprintf(baseline_meta, sizeof(baseline_meta), "Baseline Version: PostgreSQL %d", version);
-   xmlNewChild(metadata_div, NULL, BAD_CAST "span", BAD_CAST baseline_meta);
+   pgvictoria_snprintf(baseline_meta, sizeof(baseline_meta), "PostgreSQL %d", version);
+   xmlNodePtr version_row = xmlNewChild(metadata_body, NULL, BAD_CAST "tr", NULL);
+   xmlNewChild(version_row, NULL, BAD_CAST "td", BAD_CAST "Version");
+   xmlNewChild(version_row, NULL, BAD_CAST "td", BAD_CAST baseline_meta);
 
    char* os_name = NULL;
    int k_major = 0, k_minor = 0, k_patch = 0;
    if (pgvictoria_os_kernel_version(&os_name, &k_major, &k_minor, &k_patch) == 0)
    {
       char os_meta[256];
-      pgvictoria_snprintf(os_meta, sizeof(os_meta), "System: %s %d.%d.%d", os_name, k_major, k_minor, k_patch);
-      xmlNewChild(metadata_div, NULL, BAD_CAST "span", BAD_CAST os_meta);
+      pgvictoria_snprintf(os_meta, sizeof(os_meta), "%s %d.%d.%d", os_name, k_major, k_minor, k_patch);
+      xmlNodePtr system_row = xmlNewChild(metadata_body, NULL, BAD_CAST "tr", NULL);
+      xmlNewChild(system_row, NULL, BAD_CAST "td", BAD_CAST "System");
+      xmlNewChild(system_row, NULL, BAD_CAST "td", BAD_CAST os_meta);
       free(os_name);
    }
 

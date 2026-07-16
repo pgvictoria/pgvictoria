@@ -298,7 +298,7 @@ MCTF_TEST(test_report_override_version_respected)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 18, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 18") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 18") != NULL, cleanup);
    MCTF_ASSERT(strstr(report, "PostgreSQL 15") == NULL, cleanup);
 
 cleanup:
@@ -316,7 +316,7 @@ MCTF_TEST(test_report_detect_version_from_file_comment)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 0, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 16") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 16") != NULL, cleanup);
 
 cleanup:
    free(report);
@@ -334,7 +334,7 @@ MCTF_TEST(test_report_baseline_pg14)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 14, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 14") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 14") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -350,7 +350,7 @@ MCTF_TEST(test_report_baseline_pg15)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 15, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 15") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 15") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -366,7 +366,7 @@ MCTF_TEST(test_report_baseline_pg16)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 16, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 16") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 16") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -382,7 +382,7 @@ MCTF_TEST(test_report_baseline_pg17)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 17, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 17") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 17") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -398,7 +398,7 @@ MCTF_TEST(test_report_baseline_pg18)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 18, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 18") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 18") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -414,7 +414,7 @@ MCTF_TEST(test_report_baseline_pg19)
                             PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 19, &report);
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
-   MCTF_ASSERT(strstr(report, "Baseline Version: PostgreSQL 19") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Version  PostgreSQL 19") != NULL, cleanup);
    MCTF_ASSERT(row_contains(report, "max_connections", "Modified"), cleanup);
 
 cleanup:
@@ -464,6 +464,81 @@ MCTF_TEST(test_report_format_html)
    MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
    MCTF_ASSERT_PTR_NONNULL(report, cleanup);
    MCTF_ASSERT(strstr(report, "<table") != NULL, cleanup);
+
+cleanup:
+   free(report);
+   MCTF_FINISH();
+}
+
+/* Scope header: file mode labels the audited source "File" and names the
+ * configuration file it read. */
+MCTF_TEST(test_report_scope_file_row)
+{
+   char* report = NULL;
+   char expected[MAX_PATH + 16];
+
+   int rc = run_file_report("scope_file", "max_connections = 200\n",
+                            PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 18, &report);
+   MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
+   MCTF_ASSERT_PTR_NONNULL(report, cleanup);
+
+   /* run_file_report() writes the config to this path; the header reports it
+    * resolved, which for an already-absolute TEST_BASE_DIR is the same string. */
+   pgvictoria_snprintf(expected, sizeof(expected), "File     %s/report_scope_file.conf", TEST_BASE_DIR);
+   MCTF_ASSERT(strstr(report, expected) != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "Report Scope:") == NULL, cleanup);
+
+cleanup:
+   free(report);
+   MCTF_FINISH();
+}
+
+/* Scope header: the system row is emitted with its label column. */
+MCTF_TEST(test_report_scope_system_row)
+{
+   char* report = NULL;
+
+   int rc = run_file_report("scope_system", "max_connections = 200\n",
+                            PGVICTORIA_OUTPUT_TEXT, PGVICTORIA_REPORT_FULL, 18, &report);
+   MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
+   MCTF_ASSERT_PTR_NONNULL(report, cleanup);
+   MCTF_ASSERT(strstr(report, "\nSystem   ") != NULL, cleanup);
+
+cleanup:
+   free(report);
+   MCTF_FINISH();
+}
+
+/* Scope header: markdown renders the scope block as a label/value table. */
+MCTF_TEST(test_report_scope_markdown_table)
+{
+   char* report = NULL;
+
+   int rc = run_file_report("scope_md", "max_connections = 200\n",
+                            PGVICTORIA_OUTPUT_MD, PGVICTORIA_REPORT_FULL, 18, &report);
+   MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
+   MCTF_ASSERT_PTR_NONNULL(report, cleanup);
+   MCTF_ASSERT(strstr(report, "| Item | Value |") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "| **File** |") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "| **Version** | PostgreSQL 18 |") != NULL, cleanup);
+
+cleanup:
+   free(report);
+   MCTF_FINISH();
+}
+
+/* Scope header: HTML renders the scope block as a metadata table. */
+MCTF_TEST(test_report_scope_html_table)
+{
+   char* report = NULL;
+
+   int rc = run_file_report("scope_html", "max_connections = 200\n",
+                            PGVICTORIA_OUTPUT_HTML, PGVICTORIA_REPORT_FULL, 18, &report);
+   MCTF_ASSERT_INT_EQ(rc, 0, cleanup);
+   MCTF_ASSERT_PTR_NONNULL(report, cleanup);
+   MCTF_ASSERT(strstr(report, "<table class=\"metadata\">") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "<td>File</td>") != NULL, cleanup);
+   MCTF_ASSERT(strstr(report, "<td>PostgreSQL 18</td>") != NULL, cleanup);
 
 cleanup:
    free(report);

@@ -37,7 +37,7 @@
 #include <string.h>
 
 int
-pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope)
+pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope_label, const char* scope_value)
 {
    pgvictoria_mkdir_parent(output_md_path);
 
@@ -49,17 +49,20 @@ pgvictoria_generate_markdown_report(const char* output_md_path, int version, str
 
    fprintf(f, "# PostgreSQL %d Configuration Difference Report\n\n", version);
 
-   if (scope)
+   fprintf(f, "| Item | Value |\n");
+   fprintf(f, "| :--- | :--- |\n");
+
+   if (scope_label && scope_value)
    {
-      fprintf(f, "- **Report Scope:** `%s`\n", scope);
+      fprintf(f, "| **%s** | `%s` |\n", scope_label, scope_value);
    }
-   fprintf(f, "- **Baseline Version:** PostgreSQL %d\n", version);
+   fprintf(f, "| **Version** | PostgreSQL %d |\n", version);
 
    char* os_name = NULL;
    int k_major = 0, k_minor = 0, k_patch = 0;
    if (pgvictoria_os_kernel_version(&os_name, &k_major, &k_minor, &k_patch) == 0)
    {
-      fprintf(f, "- **System:** %s %d.%d.%d\n", os_name, k_major, k_minor, k_patch);
+      fprintf(f, "| **System** | %s %d.%d.%d |\n", os_name, k_major, k_minor, k_patch);
       free(os_name);
    }
    fprintf(f, "\n");
