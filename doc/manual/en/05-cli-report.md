@@ -17,27 +17,20 @@ The reporting engine supports:
 
 Every report is written to the output path given by `-o`, whatever the format; the command errors if you omit it.
 
-### Text reports
-Run the `report` command with the path to the PostgreSQL configuration file. The format defaults to `text`:
+### Format detection
+By default, the report format is automatically detected from the output file extension specified via `-o`:
+*   Files ending in `.html` will use the **HTML** format.
+*   Files ending in `.md` or `.markdown` will use the **Markdown** format.
+*   Any other extension (or files without extensions) will default to the **Text** format.
 
+For example, the following command will automatically generate an HTML report because of the `.html` extension:
 ```bash
-pgvictoria-cli -c pgvictoria-cli.conf -o report.txt report /etc/postgresql/18/main/postgresql.conf
+pgvictoria-cli -c pgvictoria-cli.conf -o report.html report /etc/postgresql/18/main/postgresql.conf
 ```
 
-This writes a text diff showing the baseline defaults versus the values defined in the file.
-
-### HTML reports
-To export the audit as an HTML document, use `-f html` with the destination `-o`:
-
+If you want to explicitly override this automatic detection, use the `-f` / `--format` flag (e.g. `-f text`, `-f html`, `-f md`):
 ```bash
-pgvictoria-cli -c pgvictoria-cli.conf -f html -o report.html report /etc/postgresql/18/main/postgresql.conf
-```
-
-### Markdown reports
-To export the audit as a Markdown document, use `-f md` (`markdown` is accepted as a synonym):
-
-```bash
-pgvictoria-cli -c pgvictoria-cli.conf -f md -o report.md report /etc/postgresql/18/main/postgresql.conf
+pgvictoria-cli -c pgvictoria-cli.conf -f text -o report.html report /etc/postgresql/18/main/postgresql.conf
 ```
 
 ### Forcing baseline versions

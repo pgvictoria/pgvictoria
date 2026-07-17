@@ -32,7 +32,7 @@ pgvictoria-cli [ -c CONFIG_FILE ] [ -u USERS_FILE ] [ -pg VERSION ] [ -f FORMAT 
     Override the PostgreSQL baseline version to compare against. Useful in offline file reporting modes when no version can be auto-detected. Valid values are `14` to `19`.
 
 *   **-f, --format FORMAT**
-    Select the report format: `text` (default), `html`, or `md` (`markdown` is accepted as a synonym for `md`). Honored in both online and offline modes.
+    Select the report format: `text` (default), `html`, or `md` (`markdown` is accepted as a synonym for `md`). If omitted, the format is automatically detected from the output file extension (`.html` -> HTML, `.md`/`.markdown` -> Markdown, other -> Text). Honored in both online and offline modes.
 
 *   **-t, --type TYPE**
     Select which settings to list: `changed` (default) shows only settings whose value differs from the version baseline, while `full` lists every setting. Honored in both online and offline modes.

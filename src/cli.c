@@ -103,7 +103,7 @@ usage(void)
    printf("  -U, --user USER               Set the database user (default: postgres)\n");
    printf("  -W, --password PASSWORD       Set the database password\n");
    printf("  -pg, --postgresql VERSION     Override the baseline version to compare against (14-19)\n");
-   printf("  -f, --format FORMAT           Report format: text|html|md (default: text)\n");
+   printf("  -f, --format FORMAT           Report format: text|html|md (default: auto-detected from output file extension, fallback: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
    printf("  -o, --output OUTPUT_FILE      Write the report to OUTPUT_FILE (required)\n");
    printf("  -V, --version                 Display version information\n");
@@ -130,6 +130,7 @@ main(int argc, char** argv)
    char* password = NULL;
    int override_version = 0;
    enum pgvictoria_output_format output_format = PGVICTORIA_OUTPUT_TEXT;
+   bool format_specified = false;
    enum pgvictoria_report_type report_type = PGVICTORIA_REPORT_CHANGED;
    char* output_file = NULL;
 
@@ -226,6 +227,7 @@ main(int argc, char** argv)
       }
       else if (!strcmp(optname, "f") || !strcmp(optname, "format"))
       {
+         format_specified = true;
          /* Select the output format; honored in both online and file mode. */
          if (!strcmp(optarg, "text"))
          {
@@ -422,6 +424,23 @@ main(int argc, char** argv)
       {
          warnx("pgvictoria-cli: -o/--output is required");
          goto error;
+      }
+
+      if (!format_specified)
+      {
+         if (pgvictoria_ends_with(output_file, ".html") || pgvictoria_ends_with(output_file, ".HTML"))
+         {
+            output_format = PGVICTORIA_OUTPUT_HTML;
+         }
+         else if (pgvictoria_ends_with(output_file, ".md") || pgvictoria_ends_with(output_file, ".MD") ||
+                  pgvictoria_ends_with(output_file, ".markdown") || pgvictoria_ends_with(output_file, ".MARKDOWN"))
+         {
+            output_format = PGVICTORIA_OUTPUT_MD;
+         }
+         else
+         {
+            output_format = PGVICTORIA_OUTPUT_TEXT;
+         }
       }
 
       if (parsed.args[0] != NULL)
