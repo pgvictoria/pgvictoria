@@ -42,8 +42,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#define ACTION_UNKNOWN 0
-#define ACTION_REPORT  1
+#define ACTION_UNKNOWN  0
+#define ACTION_REPORT   1
+#define ACTION_CONF_GET 3
+#define ACTION_CONF_SET 4
+#define ACTION_CONF_DEL 5
+#define ACTION_CONF_LS  6
 
 static bool
 load_config(void* shmem, const char* default_path, char* user_path, char** resolved_path, int (*read_func)(void*, char*), const char* label)
@@ -94,6 +98,13 @@ usage(void)
    printf("  report                       Generate a configuration report against the version baseline\n");
    printf("                                 no arguments  - scan the live server (online mode)\n");
    printf("                                 CONFIG_FILE   - compare a postgresql.conf file (offline mode)\n");
+   printf("  conf get <file> <section> <key>\n");
+   printf("                               Get a configuration value\n");
+   printf("  conf set <file> <section> <key> <value> [comment]\n");
+   printf("                               Set a configuration value (optional inline comment)\n");
+   printf("  conf del <file> <section> [key]\n");
+   printf("                               Delete a section or key\n");
+   printf("  conf ls <file> [section]     List sections or keys in a section\n");
    printf("\n");
    printf("Options:\n");
    printf("  -c, --config CONFIG_FILE      Set the path to the pgvictoria.conf file\n");
@@ -106,6 +117,7 @@ usage(void)
    printf("  -f, --format FORMAT           Report format: text|html|md (default: auto-detected from output file extension, fallback: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
    printf("  -o, --output OUTPUT_FILE      Write the report to OUTPUT_FILE (required)\n");
+   printf("  -i, --init                    Initialize a pgvictoria-cli configuration file interactively\n");
    printf("  -V, --version                 Display version information\n");
    printf("  -?, --help                    Display help\n");
    printf("\n");
@@ -137,6 +149,7 @@ main(int argc, char** argv)
    cli_option options[] = {
       {"c", "config", true},
       {"u", "users", true},
+      {"i", "init", false},
       {"V", "version", false},
       {"?", "help", false},
       {"H", "host", true},
@@ -157,6 +170,39 @@ main(int argc, char** argv)
          .action = ACTION_REPORT,
          .deprecated = false,
          .log_message = "report",
+      },
+      {
+         .command = "conf",
+         .subcommand = "get",
+         .accepted_argument_count = {3},
+         .action = ACTION_CONF_GET,
+         .deprecated = false,
+         .log_message = "conf get",
+      },
+      {
+         .command = "conf",
+         .subcommand = "set",
+         .accepted_argument_count = {4, 5},
+         .action = ACTION_CONF_SET,
+         .deprecated = false,
+         .log_message = "conf set",
+      },
+      {
+         .command = "conf",
+         .subcommand = "del",
+         .accepted_argument_count = {2, 3},
+         .action = ACTION_CONF_DEL,
+         .deprecated = false,
+         .log_message = "conf del",
+      },
+      {
+         .command = "conf",
+         .subcommand = "ls",
+         .accepted_argument_count = {1, 2},
+         .action = ACTION_CONF_LS,
+         .deprecated = false,
+         .log_message = "conf ls",
+
       }};
 
    cli_result results[sizeof(options) / sizeof(options[0])];
@@ -184,6 +230,14 @@ main(int argc, char** argv)
       else if (!strcmp(optname, "u") || !strcmp(optname, "users"))
       {
          users_path = optarg;
+      }
+      else if (!strcmp(optname, "i") || !strcmp(optname, "init"))
+      {
+         if (pgvictoria_config_init("pgvictoria-cli.conf", false, false, TARGET_CLI))
+         {
+            errx(1, "Error generating configuration");
+         }
+         exit(0);
       }
       else if (!strcmp(optname, "H") || !strcmp(optname, "host"))
       {
@@ -458,6 +512,35 @@ main(int argc, char** argv)
             warnx("pgvictoria-cli: Failed to generate report");
             goto error;
          }
+      }
+   }
+   else if (parsed.cmd->action == ACTION_CONF_GET)
+   {
+      if (pgvictoria_config_get(parsed.args[0], parsed.args[1], parsed.args[2]))
+      {
+         exit(1);
+      }
+   }
+   else if (parsed.cmd->action == ACTION_CONF_SET)
+   {
+      const char* comment = parsed.args[4] ? parsed.args[4] : NULL;
+      if (pgvictoria_config_set(parsed.args[0], parsed.args[1], parsed.args[2], parsed.args[3], comment))
+      {
+         errx(1, "Error setting configuration value");
+      }
+   }
+   else if (parsed.cmd->action == ACTION_CONF_DEL)
+   {
+      if (pgvictoria_config_del(parsed.args[0], parsed.args[1], parsed.args[2]))
+      {
+         errx(1, "Error deleting configuration");
+      }
+   }
+   else if (parsed.cmd->action == ACTION_CONF_LS)
+   {
+      if (pgvictoria_config_ls(parsed.args[0], parsed.args[1]))
+      {
+         exit(1);
       }
    }
    else
