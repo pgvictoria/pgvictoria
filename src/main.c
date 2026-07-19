@@ -96,6 +96,7 @@ usage(void)
    printf("  -u, --users USERS_FILE    Set the path to the pgvictoria_users.conf file\n");
    printf("  -D, --directory DIRECTORY Set the directory containing all configuration files\n");
    printf("                            Can also be set via PGVICTORIA_CONFIG_DIR environment variable\n");
+   printf("  -i, --init                Initialize a pgvictoria configuration file interactively\n");
    printf("  -V, --version             Display version information\n");
    printf("  -?, --help                Display help\n");
    printf("\n");
@@ -128,6 +129,7 @@ main(int argc, char** argv)
       {"c", "config", true},
       {"u", "users", true},
       {"D", "directory", true},
+      {"i", "init", false},
       {"V", "version", false},
       {"?", "help", false},
    };
@@ -166,6 +168,14 @@ main(int argc, char** argv)
       else if (!strcmp(optname, "D") || !strcmp(optname, "directory"))
       {
          directory_path = optarg;
+      }
+      else if (!strcmp(optname, "i") || !strcmp(optname, "init"))
+      {
+         if (pgvictoria_config_init("pgvictoria.conf", false, false, TARGET_MAIN))
+         {
+            errx(1, "Error generating configuration");
+         }
+         exit(0);
       }
       else if (!strcmp(optname, "V") || !strcmp(optname, "version"))
       {

@@ -66,6 +66,11 @@ extern "C" {
 #define CONFIGURATION_TYPE_MAIN                     0
 #define CONFIGURATION_TYPE_WALINFO                  1
 
+enum config_target {
+   TARGET_MAIN,
+   TARGET_CLI
+};
+
 // Set configuration argument constants
 #define CONFIGURATION_RESPONSE_STATUS           "status"
 #define CONFIGURATION_RESPONSE_MESSAGE          "message"
@@ -246,6 +251,58 @@ pgvictoria_conf_get(SSL* ssl, int client_fd, uint8_t compression, uint8_t encryp
 int
 pgvictoria_conf_set(SSL* ssl, int client_fd, uint8_t compression, uint8_t encryption,
                     struct json* payload, bool* restart_required);
+
+/**
+ * Initialize the configuration file
+ * @param output_path The output path
+ * @param quiet Quiet mode
+ * @param force Force mode
+ * @param target The target config (MAIN or CLI)
+ * @return 0 upon success, 1 otherwise
+ */
+int
+pgvictoria_config_init(const char* output_path, bool quiet, bool force, enum config_target target);
+
+/**
+ * Get a configuration value from a file
+ * @param file_path The file path
+ * @param section The section
+ * @param key The key
+ * @return 0 upon success, 1 otherwise
+ */
+int
+pgvictoria_config_get(const char* file_path, const char* section, const char* key);
+
+/**
+ * Set a configuration value in a file
+ * @param file_path The file path
+ * @param section The section
+ * @param key The key
+ * @param value The value
+ * @param comment The optional comment
+ * @return 0 upon success, 1 otherwise
+ */
+int
+pgvictoria_config_set(const char* file_path, const char* section, const char* key, const char* value, const char* comment);
+
+/**
+ * Delete a configuration section or key in a file
+ * @param file_path The file path
+ * @param section The section
+ * @param key The key
+ * @return 0 upon success, 1 otherwise
+ */
+int
+pgvictoria_config_del(const char* file_path, const char* section, const char* key);
+
+/**
+ * List configuration sections or keys in a file
+ * @param file_path The file path
+ * @param section The section
+ * @return 0 upon success, 1 otherwise
+ */
+int
+pgvictoria_config_ls(const char* file_path, const char* section);
 
 #ifdef __cplusplus
 }

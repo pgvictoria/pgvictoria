@@ -40,192 +40,13 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifndef PGVICTORIA_VERSION
-#define PGVICTORIA_VERSION "0.1.0"
-#endif
-
-#define PGVICTORIA_HOMEPAGE "https://pgvictoria.github.io/"
-#define PGVICTORIA_ISSUES   "https://github.com/pgvictoria/pgvictoria/issues"
-
-#define ACTION_CONFIG_INIT  300
-#define ACTION_CONFIG_SET   301
-#define ACTION_CONFIG_GET   302
-#define ACTION_CONFIG_DEL   303
-#define ACTION_CONFIG_LS    304
+#include <configuration.h>
 
 #define INPUT_BUFFER_SIZE   1024
 #define MAX_LINE_LENGTH     4096
 #define MAX_LINES           8192
 #define PGVICTORIA_MAX_PATH 1024
 #define MISC_LENGTH         128
-
-#define MIN(a, b)           ((a) < (b) ? (a) : (b))
-
-enum config_target {
-   TARGET_MAIN,
-   TARGET_CLI
-};
-
-struct pgvictoria_command
-{
-   const char* command;
-   const char* subcommand;
-   const int accepted_argument_count[MISC_LENGTH];
-   const int action;
-   const char* default_argument;
-   const char* log_message;
-   bool deprecated;
-};
-
-struct pgvictoria_parsed_command
-{
-   const struct pgvictoria_command* cmd;
-   char* args[MISC_LENGTH];
-};
-
-// clang-format off
-struct pgvictoria_command command_table[] =
-{
-   {
-      .command = "init",
-      .subcommand = "",
-      .accepted_argument_count = {0},
-      .deprecated = false,
-      .action = ACTION_CONFIG_INIT,
-      .log_message = "<init>",
-   },
-   {
-      .command = "set",
-      .subcommand = "",
-      .accepted_argument_count = {4, 5},
-      .deprecated = false,
-      .action = ACTION_CONFIG_SET,
-      .log_message = "<set>",
-   },
-   {
-      .command = "get",
-      .subcommand = "",
-      .accepted_argument_count = {3},
-      .deprecated = false,
-      .action = ACTION_CONFIG_GET,
-      .log_message = "<get>",
-   },
-   {
-      .command = "del",
-      .subcommand = "",
-      .accepted_argument_count = {2, 3},
-      .deprecated = false,
-      .action = ACTION_CONFIG_DEL,
-      .log_message = "<del>",
-   },
-   {
-      .command = "ls",
-      .subcommand = "",
-      .accepted_argument_count = {1, 2},
-      .deprecated = false,
-      .action = ACTION_CONFIG_LS,
-      .log_message = "<ls>",
-   },
-};
-// clang-format on
-
-/**
- * Parse the command line arguments
- * @param argc The argument count
- * @param argv The arguments
- * @param offset The offset
- * @param parsed The parsed command
- * @param command_table The command table
- * @param command_count The command count
- * @return true if successful, false otherwise
- */
-static bool
-parse_command(int argc, char** argv, int offset, struct pgvictoria_parsed_command* parsed, const struct pgvictoria_command command_table[], size_t command_count)
-{
-   if (offset >= argc)
-   {
-      return false;
-   }
-
-   for (size_t i = 0; i < command_count; i++)
-   {
-      if (!strcmp(argv[offset], command_table[i].command))
-      {
-         parsed->cmd = &command_table[i];
-         int arg_idx = 0;
-         for (int j = offset + 1; j < argc && arg_idx < MISC_LENGTH; j++)
-         {
-            parsed->args[arg_idx++] = argv[j];
-         }
-
-         bool count_ok = false;
-         for (int k = 0; k < MISC_LENGTH && command_table[i].accepted_argument_count[k] != 0; k++)
-         {
-            if (arg_idx == command_table[i].accepted_argument_count[k])
-            {
-               count_ok = true;
-               break;
-            }
-         }
-
-         if (!count_ok && command_table[i].accepted_argument_count[0] == 0 && arg_idx == 0)
-         {
-            count_ok = true;
-         }
-
-         if (count_ok)
-         {
-            return true;
-         }
-      }
-   }
-
-   return false;
-}
-
-/**
- * Print the version
- */
-static void
-version(void)
-{
-   printf("pgvictoria-config %s\n", PGVICTORIA_VERSION);
-   exit(1);
-}
-
-/**
- * Print the usage
- */
-static void
-usage(void)
-{
-   printf("pgvictoria-config %s\n", PGVICTORIA_VERSION);
-   printf("  Configuration utility for pgvictoria\n");
-   printf("\n");
-
-   printf("Usage:\n");
-   printf("  pgvictoria-config [ OPTIONS ] [main|cli] [ COMMAND ]\n");
-   printf("\n");
-   printf("Options:\n");
-   printf("  -o, --output FILE        Set the output file path (default: ./pgvictoria.conf)\n");
-   printf("  -q, --quiet              Generate default options without prompts (for init)\n");
-   printf("  -F, --force              Force overwrite if the output file already exists\n");
-   printf("  -V, --version            Display version information\n");
-   printf("  -?, --help               Display help\n");
-   printf("\n");
-   printf("Commands:\n");
-   printf("  init                     Generate a configuration file interactively\n");
-   printf("  get <file> <section> <key>\n");
-   printf("                           Get a configuration value\n");
-   printf("  set <file> <section> <key> <value> [comment]\n");
-   printf("                           Set a configuration value (optional inline comment)\n");
-   printf("  del <file> <section> [key]\n");
-   printf("                           Delete a section or key\n");
-   printf("  ls <file> [section]      List sections or keys in a section\n");
-   printf("\n");
-   printf("pgvictoria: %s\n", PGVICTORIA_HOMEPAGE);
-   printf("Report bugs: %s\n", PGVICTORIA_ISSUES);
-}
 
 /**
  * Prompt the user for input
@@ -360,8 +181,8 @@ write_key_value(FILE* file, const char* key, const char* value)
  * @param force Force mode
  * @return 0 upon success, 1 otherwise
  */
-static int
-config_init(const char* output_path, bool quiet, bool force, enum config_target target)
+int
+pgvictoria_config_init(const char* output_path, bool quiet, bool force, enum config_target target)
 {
    FILE* file = NULL;
    char host[MISC_LENGTH];
@@ -658,8 +479,8 @@ trim(char* str)
  * @param key The key
  * @return 0 upon success, 1 otherwise
  */
-static int
-config_get(const char* file_path, const char* section, const char* key)
+int
+pgvictoria_config_get(const char* file_path, const char* section, const char* key)
 {
    FILE* file = NULL;
    char line[MAX_LINE_LENGTH];
@@ -763,8 +584,8 @@ error:
  * @param comment The optional comment
  * @return 0 upon success, 1 otherwise
  */
-static int
-config_set(const char* file_path, const char* section, const char* key, const char* value, const char* comment)
+int
+pgvictoria_config_set(const char* file_path, const char* section, const char* key, const char* value, const char* comment)
 {
    FILE* file = NULL;
    char* lines[MAX_LINES];
@@ -968,8 +789,8 @@ error:
  * @param key The key
  * @return 0 upon success, 1 otherwise
  */
-static int
-config_del(const char* file_path, const char* section, const char* key)
+int
+pgvictoria_config_del(const char* file_path, const char* section, const char* key)
 {
    FILE* file = NULL;
    char* lines[MAX_LINES];
@@ -1117,8 +938,8 @@ error:
  * @param section The section
  * @return 0 upon success, 1 otherwise
  */
-static int
-config_ls(const char* file_path, const char* section)
+int
+pgvictoria_config_ls(const char* file_path, const char* section)
 {
    FILE* file = NULL;
    char line[MAX_LINE_LENGTH];
@@ -1197,147 +1018,4 @@ error:
       fclose(file);
    }
    return 1;
-}
-
-/**
- * Main entry point
- * @param argc The argument count
- * @param argv The arguments
- * @return 0 upon success, 1 otherwise
- */
-int
-main(int argc, char** argv)
-{
-   char* output_path = NULL;
-   bool quiet = false;
-   bool force = false;
-   int c;
-   int option_index = 0;
-   size_t command_count = sizeof(command_table) / sizeof(struct pgvictoria_command);
-   struct pgvictoria_parsed_command parsed = {.cmd = NULL, .args = {0}};
-   enum config_target target = TARGET_MAIN;
-
-   setbuf(stdout, NULL);
-
-   while (1)
-   {
-      static struct option long_options[] =
-         {
-            {"output", required_argument, 0, 'o'},
-            {"quiet", no_argument, 0, 'q'},
-            {"force", no_argument, 0, 'F'},
-            {"version", no_argument, 0, 'V'},
-            {"help", no_argument, 0, '?'},
-         };
-
-      c = getopt_long(argc, argv, "o:qFV?", long_options, &option_index);
-      if (c == -1)
-      {
-         break;
-      }
-
-      switch (c)
-      {
-         case 'o':
-            output_path = optarg;
-            break;
-         case 'q':
-            quiet = true;
-            break;
-         case 'F':
-            force = true;
-            break;
-         case 'V':
-            version();
-            break;
-         case '?':
-            usage();
-            exit(0);
-            break;
-      }
-   }
-
-   if (argc > optind)
-   {
-      if (!strcmp(argv[optind], "main"))
-      {
-         target = TARGET_MAIN;
-         optind++;
-      }
-      else if (!strcmp(argv[optind], "cli"))
-      {
-         target = TARGET_CLI;
-         optind++;
-      }
-   }
-
-   if (getuid() == 0)
-   {
-      errx(1, "pgvictoria-config: Using the root account is not allowed");
-   }
-
-   if (argc <= 1)
-   {
-      usage();
-      exit(1);
-   }
-
-   if (!parse_command(argc, argv, optind, &parsed, command_table, command_count))
-   {
-      usage();
-      goto error;
-   }
-
-   if (parsed.cmd->action == ACTION_CONFIG_INIT)
-   {
-      if (output_path == NULL)
-      {
-         if (target == TARGET_CLI)
-         {
-            output_path = "pgvictoria-cli.conf";
-         }
-         else
-         {
-            output_path = "pgvictoria.conf";
-         }
-      }
-      if (config_init(output_path, quiet, force, target))
-      {
-         errx(1, "Error generating configuration");
-      }
-   }
-   else if (parsed.cmd->action == ACTION_CONFIG_GET)
-   {
-      if (config_get(parsed.args[0], parsed.args[1], parsed.args[2]))
-      {
-         exit(1);
-      }
-   }
-   else if (parsed.cmd->action == ACTION_CONFIG_SET)
-   {
-      const char* comment = parsed.args[4] ? parsed.args[4] : NULL;
-      if (config_set(parsed.args[0], parsed.args[1], parsed.args[2], parsed.args[3], comment))
-      {
-         errx(1, "Error setting configuration value");
-      }
-   }
-   else if (parsed.cmd->action == ACTION_CONFIG_DEL)
-   {
-      if (config_del(parsed.args[0], parsed.args[1], parsed.args[2]))
-      {
-         errx(1, "Error deleting configuration");
-      }
-   }
-   else if (parsed.cmd->action == ACTION_CONFIG_LS)
-   {
-      if (config_ls(parsed.args[0], parsed.args[1]))
-      {
-         exit(1);
-      }
-   }
-
-   exit(0);
-
-error:
-   exit(1);
 }
