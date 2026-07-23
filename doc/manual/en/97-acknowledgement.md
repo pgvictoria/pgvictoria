@@ -12,6 +12,7 @@ Haoran Zhang <andrewzhr9911@gmail.com>
 Sarthak Aneja <sarthakaneja260@gmail.com>
 Sakshi Aggarwal <sakshiaggarwal2706@gmail.com>
 Ali Sayed <aliabdelrahman2005@gmail.com>
+youssef-joe <joe92228@gmail.com>
 ```
 
 ## Contributing
