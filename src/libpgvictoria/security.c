@@ -1131,6 +1131,10 @@ server_md5(char* username, char* password, SSL* ssl, int server_fd)
    }
 
    md5_req = malloc(36);
+   if (md5_req == NULL)
+   {
+      goto error;
+   }
    memset(md5_req, 0, 36);
    memcpy(md5_req, shadow, 32);
    memcpy(md5_req + 32, salt, 4);
