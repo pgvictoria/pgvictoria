@@ -518,6 +518,17 @@ char*
 pgvictoria_append_char(char* orig, char c);
 
 /**
+ * Append bytes with an explicit length
+ * @param orig The original string
+ * @param s The bytes
+ * @param s_length The number of bytes
+ * @param orig_length The length of the original string
+ * @return The resulting string
+ */
+char*
+pgvictoria_append_bytes(char* orig, const char* s, size_t s_length, size_t orig_length);
+
+/**
  * Append an integer
  * @param orig The original string
  * @param i The integer
@@ -534,6 +545,15 @@ pgvictoria_append_int(char* orig, int i);
  */
 char*
 pgvictoria_append_ulong(char* orig, unsigned long l);
+
+/**
+ * Append an unsigned long long
+ * @param orig The original string
+ * @param l The long
+ * @return The resulting string
+ */
+char*
+pgvictoria_append_ullong(char* orig, unsigned long long l);
 
 /**
  * Append a double
