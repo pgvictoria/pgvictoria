@@ -927,55 +927,57 @@ pgvictoria_append_char(char* orig, char c)
 }
 
 char*
+pgvictoria_append_bytes(char* orig, const char* s, size_t s_length, size_t orig_length)
+{
+   char* n = NULL;
+   if (s == NULL || s_length == 0)
+   {
+      return orig;
+   }
+   n = (char*)realloc(orig, orig_length + s_length + 1);
+   if (n == NULL)
+   {
+      return orig;
+   }
+   memcpy(n + orig_length, s, s_length);
+   n[orig_length + s_length] = '\0';
+   return n;
+}
+
+char*
 pgvictoria_append_int(char* orig, int i)
 {
-   char number[12];
-
-   memset(&number[0], 0, sizeof(number));
-   snprintf(&number[0], 11, "%d", i);
-   orig = pgvictoria_append(orig, number);
-
-   return orig;
+   return pgvictoria_format_and_append(orig, "%d", i);
 }
 
 char*
 pgvictoria_append_ulong(char* orig, unsigned long l)
 {
-   char number[21];
+   return pgvictoria_format_and_append(orig, "%lu", l);
+}
 
-   memset(&number[0], 0, sizeof(number));
-   snprintf(&number[0], 20, "%lu", l);
-   orig = pgvictoria_append(orig, number);
-
-   return orig;
+char*
+pgvictoria_append_ullong(char* orig, unsigned long long l)
+{
+   return pgvictoria_format_and_append(orig, "%llu", l);
 }
 
 char*
 pgvictoria_append_double(char* orig, double d)
 {
-   char number[21];
-
-   memset(&number[0], 0, sizeof(number));
-   snprintf(&number[0], 20, "%lf", d);
-   orig = pgvictoria_append(orig, number);
-
-   return orig;
+   return pgvictoria_format_and_append(orig, "%lf", d);
 }
 
 char*
 pgvictoria_append_double_precision(char* orig, double d, int precision)
 {
-   char number[21];
-
    char* format = NULL;
    format = pgvictoria_append_char(format, '%');
    format = pgvictoria_append_char(format, '.');
    format = pgvictoria_append_int(format, precision);
    format = pgvictoria_append_char(format, 'f');
 
-   memset(&number[0], 0, sizeof(number));
-   snprintf(&number[0], 20, format, d);
-   orig = pgvictoria_append(orig, number);
+   orig = pgvictoria_format_and_append(orig, format, d);
 
    free(format);
 
@@ -2756,17 +2758,30 @@ char*
 pgvictoria_format_and_append(char* buf, char* format, ...)
 {
    va_list args;
-   va_start(args, format);
+   int len;
+   char* formatted_str = NULL;
 
    // Determine the required buffer size
-   int size_needed = vsnprintf(NULL, 0, format, args) + 1;
+   va_start(args, format);
+   len = vsnprintf(NULL, 0, format, args);
    va_end(args);
 
+   // Leave buf as it is on failure, like pgvictoria_append() does
+   if (len < 0)
+   {
+      return buf;
+   }
+
    // Allocate buffer to hold the formatted string
-   char* formatted_str = malloc(size_needed);
+   formatted_str = malloc((size_t)len + 1);
+
+   if (formatted_str == NULL)
+   {
+      return buf;
+   }
 
    va_start(args, format);
-   vsnprintf(formatted_str, size_needed, format, args);
+   vsnprintf(formatted_str, (size_t)len + 1, format, args);
    va_end(args);
 
    buf = pgvictoria_append(buf, formatted_str);
