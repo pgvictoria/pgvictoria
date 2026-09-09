@@ -32,6 +32,7 @@
 #include <deque.h>
 #include <pgvictoria.h>
 #include <report.h>
+#include <suggest.h>
 
 /**
  * Generate a clean, readable Markdown report from difference items.
@@ -43,5 +44,13 @@
  * @return 0 upon success, otherwise 1.
  */
 int pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope_label, const char* scope_value);
+
+/**
+ * Generate a Markdown file for Suggested PostgreSQL Configurations Parameters
+ * @param output_md_path The destination path of the Markdown file
+ * @param parameters PostgreSQL Configuration parameters list
+ * @return 0 upon success, otherwise 1.
+ */
+int pgvictoria_generate_markdown_suggest(const char* output_md_path, struct pgvictoria_suggest_item* parameters);
 
 #endif
