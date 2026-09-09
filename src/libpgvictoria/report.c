@@ -403,7 +403,6 @@ pgvictoria_report_online(int server, enum pgvictoria_output_format format, enum 
    SSL* ssl = NULL;
    int fd = -1;
    struct message* msg = NULL;
-   struct query_response* version_response = NULL;
    struct query_response* all_response = NULL;
    int version = 0;
    struct json* baseline = NULL;
@@ -417,49 +416,14 @@ pgvictoria_report_online(int server, enum pgvictoria_output_format format, enum 
 
    srv = &config->common.servers[server];
 
-   char* password_str = "";
-   for (int i = 0; i < config->common.number_of_users; i++)
-   {
-      if (strcmp(config->common.users[i].username, srv->username) == 0)
-      {
-         password_str = config->common.users[i].password;
-         break;
-      }
-   }
-   if (password_str == NULL || *password_str == '\0')
-   {
-      if (config->common.number_of_users > 0)
-      {
-         password_str = config->common.users[0].password;
-      }
-   }
-
-   if (pgvictoria_server_authenticate(server, "postgres", srv->username, password_str, false, &ssl, &fd) != AUTH_SUCCESS)
-   {
-      warnx("Failed to authenticate to server");
-      goto error;
-   }
-
-   if (pgvictoria_create_query_message("SHOW server_version_num;", &msg) != MESSAGE_STATUS_OK)
+   if (pgvictoria_connect_server(server, &ssl, &fd))
    {
       goto error;
    }
 
-   if (pgvictoria_query_execute(ssl, fd, msg, &version_response))
+   if (pgvictoria_get_pg_version(ssl, fd, &version))
    {
       goto error;
-   }
-
-   pgvictoria_free_message(msg);
-   msg = NULL;
-
-   if (version_response && version_response->tuples && version_response->tuples->data[0])
-   {
-      char* ver_str = version_response->tuples->data[0];
-      if (pgvictoria_is_number(ver_str, 10))
-      {
-         version = pgvictoria_atoi(ver_str) / 10000;
-      }
    }
 
    baseline = pgvictoria_get_baseline(version);
@@ -505,10 +469,6 @@ error:
    {
       pgvictoria_free_message(msg);
       msg = NULL;
-   }
-   if (version_response)
-   {
-      pgvictoria_free_query_response(version_response);
    }
    if (all_response)
    {

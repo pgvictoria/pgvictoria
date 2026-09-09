@@ -31,6 +31,7 @@
 #include <postgresql.h>
 #include <json.h>
 #include <utils.h>
+#include <security.h>
 
 /* baselines */
 #include <pg14.h>
@@ -48,6 +49,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <err.h>
 
 struct pg_version_baseline
 {
@@ -427,4 +429,78 @@ pgvictoria_get_max_supported_version(void)
    }
 
    return max_ver > 0 ? max_ver : 18; /* default fallback if none found */
+}
+
+int
+pgvictoria_connect_server(int server, SSL** ssl, int* fd)
+{
+   struct main_configuration* config = (struct main_configuration*)shmem;
+   struct server* srv;
+   char* password_str = "";
+
+   if (server < 0 || server >= config->common.number_of_servers)
+   {
+      warnx("Invalid server index");
+      return 1;
+   }
+
+   srv = &config->common.servers[server];
+
+   for (int i = 0; i < config->common.number_of_users; i++)
+   {
+      if (strcmp(config->common.users[i].username, srv->username) == 0)
+      {
+         password_str = config->common.users[i].password;
+         break;
+      }
+   }
+   if (password_str == NULL || *password_str == '\0')
+   {
+      if (config->common.number_of_users > 0)
+      {
+         password_str = config->common.users[0].password;
+      }
+   }
+
+   if (pgvictoria_server_authenticate(server, "postgres", srv->username, password_str, false, ssl, fd) != AUTH_SUCCESS)
+   {
+      warnx("Failed to authenticate to server");
+      return 1;
+   }
+
+   return 0;
+}
+
+int
+pgvictoria_get_pg_version(SSL* ssl, int fd, int* pg_version)
+{
+   struct message* msg = NULL;
+   struct query_response* version_response = NULL;
+
+   if (pgvictoria_create_query_message("SHOW server_version_num;", &msg) != MESSAGE_STATUS_OK)
+   {
+      return 1;
+   }
+
+   if (pgvictoria_query_execute(ssl, fd, msg, &version_response))
+   {
+      pgvictoria_free_message(msg);
+      return 1;
+   }
+
+   pgvictoria_free_message(msg);
+   msg = NULL;
+
+   if (version_response && version_response->tuples && version_response->tuples->data[0])
+   {
+      char* ver_str = version_response->tuples->data[0];
+      if (pgvictoria_is_number(ver_str, 10))
+      {
+         *pg_version = pgvictoria_atoi(ver_str) / 10000;
+      }
+   }
+
+   pgvictoria_free_query_response(version_response);
+
+   return 0;
 }

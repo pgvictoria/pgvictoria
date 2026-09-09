@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 #include <pgvictoria.h>
+#include <postgresql.h>
 #include <openssl/ssl.h>
 
 /**
@@ -45,16 +46,6 @@ struct pgvictoria_diff_item
    char baseline_val[1024]; /**< The expected value from the version baseline */
    char current_val[1024];  /**< The value reported by the live server */
    char status[32];         /**< Comparison result: "Default", "Modified" or "Custom" */
-};
-
-/**
- * Output format for the configuration report (text, HTML, or Markdown). Selected
- * with -f/--format in both online and file mode.
- */
-enum pgvictoria_output_format {
-   PGVICTORIA_OUTPUT_TEXT = 0,
-   PGVICTORIA_OUTPUT_HTML,
-   PGVICTORIA_OUTPUT_MD,
 };
 
 /**

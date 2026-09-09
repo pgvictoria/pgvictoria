@@ -41,12 +41,22 @@ extern "C" {
 #include <json.h>
 
 /**
+ * Output format for the configuration report (text, HTML, or Markdown). Selected
+ * with -f/--format in both online and file mode.
+ */
+enum pgvictoria_output_format {
+   PGVICTORIA_OUTPUT_TEXT = 0,
+   PGVICTORIA_OUTPUT_HTML,
+   PGVICTORIA_OUTPUT_MD,
+};
+
+/**
  * Get the PostgreSQL baseline configuration for a specific version.
  * 
  * @param version The PostgreSQL version (e.g. 14, 15, 16, 17, 18, 19)
  * @return The JSON baseline object, or NULL if the version is not supported or parsing fails.
  */
-struct json*
+struct json *
 pgvictoria_get_baseline(int version);
 
 /**
@@ -57,6 +67,24 @@ pgvictoria_get_baseline(int version);
  */
 bool
 pgvictoria_is_version_supported(int version);
+
+/**
+ * Connect and Authenticate to server
+ * @param server The server index
+ * @param ssl SSL connection
+ * @param fd PostgreSQL connection file descriptor
+ * @return 0 on success, 1 on failure
+ */
+int pgvictoria_connect_server(int server, SSL **ssl, int *fd);
+
+/**
+ * Get PostgreSQL version number
+ * @param ssl SSL connection
+ * @param fd PostgreSQL connection file descriptor
+ * @param pg_version PostgreSQL version
+ * @return 0 on success, 1 on failure
+ */
+int pgvictoria_get_pg_version(SSL *ssl, int fd, int *pg_version);
 
 #ifdef __cplusplus
 }

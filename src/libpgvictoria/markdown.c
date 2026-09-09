@@ -89,3 +89,82 @@ pgvictoria_generate_markdown_report(const char* output_md_path, int version, str
    printf("Report successfully generated to %s\n", output_md_path);
    return 0;
 }
+
+int
+pgvictoria_generate_markdown_suggest(const char* output_md_path, struct pgvictoria_suggest_item* parameters)
+{
+   FILE* f = fopen(output_md_path, "w");
+
+   if (f == NULL)
+   {
+      perror("Could not open output file");
+      return 1;
+   }
+
+   fprintf(f, "# Suggested PostgreSQL Configuration Parameters\n");
+   fprintf(f, "```conf\n");
+
+   fprintf(f, "shared_buffers = %" PRIu64 "%s\n", parameters->shared_buffers_val, parameters->shared_buffers_unit);
+   fprintf(f, "max_connections = %d\n", parameters->max_connections);
+   fprintf(f, "effective_cache_size = %" PRIu64 "%s\n", parameters->effective_cache_size_val, parameters->effective_cache_size_unit);
+   fprintf(f, "maintenance_work_mem = %" PRIu64 "%s\n", parameters->maintenance_work_mem_val, parameters->maintenance_work_mem_unit);
+   fprintf(f, "min_wal_size = %" PRIu64 "%s\n", parameters->min_wal_size, parameters->min_wal_size == 100 ? "MB" : "GB");
+   fprintf(f, "max_wal_size = %" PRIu64 "GB\n", parameters->max_wal_size);
+   fprintf(f, "wal_buffers = %" PRIu64 "%s\n", parameters->wal_buffers_val, parameters->wal_buffers_unit);
+   fprintf(f, "default_statistics_target = %d\n", parameters->default_statistics_target);
+   fprintf(f, "huge_pages = %s\n", parameters->huge_pages == PGVICTORIA_HUGE_PAGES_TRY ? "try" : "off");
+   if (parameters->parallel_settings.max_worker_processes > 0)
+   {
+      fprintf(f, "max_worker_processes = %d\n", parameters->parallel_settings.max_worker_processes);
+      fprintf(f, "max_parallel_workers_per_gather = %d\n", parameters->parallel_settings.max_parallel_workers_per_gather);
+
+      if (parameters->parallel_settings.max_parallel_workers > 0)
+      {
+         fprintf(f, "max_parallel_workers = %d\n", parameters->parallel_settings.max_parallel_workers);
+      }
+      if (parameters->parallel_settings.max_parallel_maintenance_workers)
+      {
+         fprintf(f, "max_parallel_maintenance_workers = %d\n", parameters->parallel_settings.max_parallel_maintenance_workers);
+      }
+   }
+   if (parameters->wal_settings.wal_level != NULL)
+   {
+      fprintf(f, "wal_level = %s\n", parameters->wal_settings.wal_level);
+      fprintf(f, "max_wal_senders = %d\n", parameters->wal_settings.max_wal_senders);
+   }
+   if (parameters->jit != NULL)
+   {
+      fprintf(f, "jit = %s\n", parameters->jit);
+   }
+   if (parameters->wal_compression)
+   {
+      fprintf(f, "wal_compression = %s\n", parameters->wal_compression);
+   }
+   if (parameters->autovacuum_max_workers != 3)
+   {
+      fprintf(f, "autovacuum_max_workers = %d\n", parameters->autovacuum_max_workers);
+   }
+   if (parameters->autovacuum_work_mem_val > 0)
+   {
+      fprintf(f, "autovacuum_work_mem = %" PRIu64 "%s\n", parameters->autovacuum_work_mem_val, parameters->autovacuum_work_mem_unit);
+   }
+   if (parameters->io_method != NULL)
+   {
+      fprintf(f, "io_method = %s\n", parameters->io_method);
+   }
+   if (parameters->io_workers != 0)
+   {
+      fprintf(f, "io_workers = %d\n", parameters->io_workers);
+   }
+   fprintf(f, "work_mem = %" PRIu64 "%s\n", parameters->work_mem_val, parameters->work_mem_unit);
+   fprintf(f, "random_page_cost = %.1f\n", parameters->random_page_cost);
+   if (parameters->effective_io_concurrency != -1)
+   {
+      fprintf(f, "effective_io_concurrency = %d\n", parameters->effective_io_concurrency);
+   }
+   fprintf(f, "```\n");
+
+   fclose(f);
+
+   return 0;
+}
