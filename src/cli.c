@@ -32,6 +32,7 @@
 #include <logging.h>
 #include <memory.h>
 #include <report.h>
+#include <suggest.h>
 #include <postgresql.h>
 #include <shmem.h>
 #include <utils.h>
@@ -44,6 +45,7 @@
 
 #define ACTION_UNKNOWN 0
 #define ACTION_REPORT  1
+#define ACTION_SUGGEST 2
 
 static bool
 load_config(void* shmem, const char* default_path, char* user_path, char** resolved_path, int (*read_func)(void*, char*), const char* label)
@@ -89,11 +91,14 @@ usage(void)
    printf("\n");
    printf("Usage:\n");
    printf("  pgvictoria-cli [ OPTIONS ] report [ CONFIG_FILE ]\n");
+   printf("  pgvictoria-cli [ OPTIONS ] suggest \n");
    printf("\n");
    printf("Commands:\n");
    printf("  report                       Generate a configuration report against the version baseline\n");
    printf("                                 no arguments  - scan the live server (online mode)\n");
    printf("                                 CONFIG_FILE   - compare a postgresql.conf file (offline mode)\n");
+   printf("\n");
+   printf("  suggest                      Suggest postgresql.conf parameters\n");
    printf("\n");
    printf("Options:\n");
    printf("  -c, --config CONFIG_FILE      Set the path to the pgvictoria.conf file\n");
@@ -102,6 +107,7 @@ usage(void)
    printf("  -P, --port PORT               Set the PostgreSQL port (default: 5432)\n");
    printf("  -U, --user USER               Set the database user (default: postgres)\n");
    printf("  -W, --password PASSWORD       Set the database password\n");
+   printf("  -w, --workload WORKLOAD       Workload type: oltp|dw|mixed|desktop (default: general)\n");
    printf("  -pg, --postgresql VERSION     Override the baseline version to compare against (14-19)\n");
    printf("  -f, --format FORMAT           Report format: text|html|md (default: auto-detected from output file extension, fallback: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
@@ -133,6 +139,7 @@ main(int argc, char** argv)
    bool format_specified = false;
    enum pgvictoria_report_type report_type = PGVICTORIA_REPORT_CHANGED;
    char* output_file = NULL;
+   enum pgvictoria_db_workload_type workload = PGVICTORIA_DB_WORKLOAD_TYPE_GENERAL;
 
    cli_option options[] = {
       {"c", "config", true},
@@ -143,6 +150,7 @@ main(int argc, char** argv)
       {"P", "port", true},
       {"U", "user", true},
       {"W", "password", true},
+      {"w", "workload", true},
       {"pg", "postgresql", true},
       {"f", "format", true},
       {"t", "type", true},
@@ -157,6 +165,14 @@ main(int argc, char** argv)
          .action = ACTION_REPORT,
          .deprecated = false,
          .log_message = "report",
+      },
+      {
+         .command = "suggest",
+         .subcommand = "",
+         .accepted_argument_count = {0, 0},
+         .action = ACTION_SUGGEST,
+         .deprecated = false,
+         .log_message = "suggest",
       }};
 
    cli_result results[sizeof(options) / sizeof(options[0])];
@@ -210,6 +226,34 @@ main(int argc, char** argv)
       else if (!strcmp(optname, "W") || !strcmp(optname, "password"))
       {
          password = optarg;
+      }
+      else if (!strcmp(optname, "w") || !strcmp(optname, "workload"))
+      {
+         if(!strcmp(optarg, "oltp"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_OLTP;
+         }
+         else if(!strcmp(optarg, "web"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_WEB;
+         }
+         else if(!strcmp(optarg, "dw"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_DW;
+         }
+         else if(!strcmp(optarg, "desktop"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_DESKTOP;
+         }
+         else if(!strcmp(optarg, "mixed"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_MIXED;
+         }
+         else
+         {
+            warnx("pgvictoria-cli: Unsupported workload: %s", optarg);
+            exit(1);
+         }
       }
       else if (!strcmp(optname, "pg") || !strcmp(optname, "postgresql"))
       {
@@ -460,6 +504,16 @@ main(int argc, char** argv)
          }
       }
    }
+
+   else if(parsed.cmd->action == ACTION_SUGGEST)
+   {
+      if(pgvictoria_suggest_mode(workload, output_file, output_format))
+      {
+         warnx("pgvictoria-cli: Failed to generate file suggest");
+         goto error;
+      }
+   }
+
    else
    {
       warnx("pgvictoria-cli: Unknown action");
