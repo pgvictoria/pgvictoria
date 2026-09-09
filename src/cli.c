@@ -107,7 +107,7 @@ usage(void)
    printf("  -P, --port PORT               Set the PostgreSQL port (default: 5432)\n");
    printf("  -U, --user USER               Set the database user (default: postgres)\n");
    printf("  -W, --password PASSWORD       Set the database password\n");
-   printf("  -w, --workload WORKLOAD       Workload type: oltp|dw|mixed|desktop (default: general)\n");
+   printf("  -w, --workload WORKLOAD       Workload type: oltp|dw|mixed|desktop|web (default: general)\n");
    printf("  -pg, --postgresql VERSION     Override the baseline version to compare against (14-19)\n");
    printf("  -f, --format FORMAT           Report format: text|html|md (default: auto-detected from output file extension, fallback: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
