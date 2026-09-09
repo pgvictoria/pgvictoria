@@ -26,31 +26,55 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PGVICTORIA_MARKDOWN_H
-#define PGVICTORIA_MARKDOWN_H
+#ifndef PGVICTORIA_SUGGEST_H
+#define PGVICTORIA_SUGGEST_H
 
-#include <deque.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pgvictoria.h>
 #include <report.h>
+#include <stdint.h>
 
 /**
- * Generate a clean, readable Markdown report from difference items.
- * @param output_md_path The destination path of the Markdown file.
- * @param version The resolved PostgreSQL version.
- * @param items The deque of comparison results.
- * @param scope_label What kind of source was audited ("File" or "Online").
- * @param scope_value Which source it was: a configuration file path, or a host:port.
- * @return 0 upon success, otherwise 1.
- */
-int pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope_label, const char* scope_value);
+  * Database Workload Types
+  */
+enum pgvictoria_db_workload_type {
+   PGVICTORIA_DB_WORKLOAD_TYPE_GENERAL,
+   PGVICTORIA_DB_WORKLOAD_TYPE_WEB,
+   PGVICTORIA_DB_WORKLOAD_TYPE_DW,
+   PGVICTORIA_DB_WORKLOAD_TYPE_OLTP,
+   PGVICTORIA_DB_WORKLOAD_TYPE_DESKTOP,
+   PGVICTORIA_DB_WORKLOAD_TYPE_MIXED
+};
 
 /**
- * Generate a Markdown file for Suggested PostgreSQL Configurations Parameters
- * @param output_md_path The destination path of the Markdown file
- * @param shared_buffers_val shared_buffers suggested value
- * @param shared_buffers_unit unit of suggest shared_buffers GB/MB
- * @return 0 upon success, otherwise 1.
+ * Auto Detect System Parameters used in suggestions
+ * @param total_ram The total system memory in bytes
+ * @return 0 upon success, otherwise 1
  */
-int pgvictoria_generate_markdown_suggest(const char* output_md_path, uint64_t shared_buffers_val, const char* shared_buffers_unit);
+int auto_detect_system_parameter(uint64_t *total_ram);
+
+/**
+ * Calculate suggested shared_buffers based on total_ram ans DB workload type
+ * @param total_ram The total system memory in bytes
+ * @param type The DB workload type
+ * @return suggested shared_buffers size in GB/MB bases on the total_ram size
+ */
+uint64_t suggested_shared_buffers(uint64_t total_ram, enum pgvictoria_db_workload_type type);
+
+/**
+ * Suggest
+ * @param type The DB workload type
+ * @param output_file The path of output_file or NULL and print the suggestions on CLI.
+ * @param format The output format (text, HTML, or Markdown)
+ * @return suggested shared_buffers size in GB/MB bases on the total_ram size
+ */
+int pgvictoria_suggest_mode(enum pgvictoria_db_workload_type type, char *output_file, enum pgvictoria_output_format format);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

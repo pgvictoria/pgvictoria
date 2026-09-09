@@ -89,3 +89,24 @@ pgvictoria_generate_markdown_report(const char* output_md_path, int version, str
    printf("Report successfully generated to %s\n", output_md_path);
    return 0;
 }
+
+int
+pgvictoria_generate_markdown_suggest(const char* output_md_path, uint64_t shared_buffers_val, const char* shared_buffers_unit)
+{
+   FILE* f = fopen(output_md_path, "w");
+
+   if (f == NULL)
+   {
+      perror("Could not open output file");
+      return 1;
+   }
+
+   fprintf(f, "# Suggested PostgreSQL Configuration Parameters\n");
+   fprintf(f, "```conf\n");
+   fprintf(f, "shared_buffers = %" PRIu64 "%s\n", shared_buffers_val, shared_buffers_unit);
+   fprintf(f, "```\n");
+
+   fclose(f);
+
+   return 0;
+}
