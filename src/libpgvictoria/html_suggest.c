@@ -26,31 +26,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PGVICTORIA_MARKDOWN_H
-#define PGVICTORIA_MARKDOWN_H
+#include <html_suggest.h>
 
-#include <deque.h>
-#include <pgvictoria.h>
-#include <report.h>
+#include <inttypes.h>
+#include <stdio.h>
 
-/**
- * Generate a clean, readable Markdown report from difference items.
- * @param output_md_path The destination path of the Markdown file.
- * @param version The resolved PostgreSQL version.
- * @param items The deque of comparison results.
- * @param scope_label What kind of source was audited ("File" or "Online").
- * @param scope_value Which source it was: a configuration file path, or a host:port.
- * @return 0 upon success, otherwise 1.
- */
-int pgvictoria_generate_markdown_report(const char* output_md_path, int version, struct deque* items, const char* scope_label, const char* scope_value);
+int
+pgvictoria_generate_html_suggest(const char* output_html_path, uint64_t shared_buffers_val, const char* shared_buffers_unit)
+{
+   FILE* f = fopen(output_html_path, "w");
 
-/**
- * Generate a Markdown file for Suggested PostgreSQL Configurations Parameters
- * @param output_md_path The destination path of the Markdown file
- * @param shared_buffers_val shared_buffers suggested value
- * @param shared_buffers_unit unit of suggest shared_buffers GB/MB
- * @return 0 upon success, otherwise 1.
- */
-int pgvictoria_generate_markdown_suggest(const char* output_md_path, uint64_t shared_buffers_val, const char* shared_buffers_unit);
+   if (f == NULL)
+   {
+      perror("Could not open output file");
+      return 1;
+   }
 
-#endif
+   fprintf(f, "<!DOCTYPE html>\n");
+   fprintf(f, "<html>\n");
+   fprintf(f, "<head>\n");
+   fprintf(f, " <title>Suggested PostgreSQL Configurations Parameters</title>\n");
+   fprintf(f, "</head>\n");
+
+   fprintf(f, "<body>\n");
+   fprintf(f, " <h1>Suggested PostgreSQL Configurations Parameters</h1>\n");
+   fprintf(f, " <pre>shared_buffers = %" PRIu64 "%s</pre>\n", shared_buffers_val, shared_buffers_unit);
+   fprintf(f, "</body>\n");
+
+   fprintf(f, "</html>\n");
+
+   fclose(f);
+   return 0;
+}
