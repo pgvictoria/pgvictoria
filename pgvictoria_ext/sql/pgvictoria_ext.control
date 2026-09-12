@@ -1,0 +1,5 @@
+#pgvictoria_ext extension
+comment = 'pgVictoria PostgreSQL extension'
+default_version = '0.1.0'
+module_pathname = '$libdir/pgvictoria_ext'
+relocatable = true

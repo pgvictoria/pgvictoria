@@ -1,0 +1,4 @@
+CREATE FUNCTION pgvictoria_ext_version()
+RETURNS text
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT;
