@@ -41,6 +41,31 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
+elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+
+  add_compile_options(-DHAVE_OSX)
+  add_compile_options(-D_DARWIN_C_SOURCE)
+
+  #
+  # Include directories
+  #
+  include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${LIBEV_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR}
+    ${LIBXML2_INCLUDE_DIRS}
+  )
+
+  #
+  # Library directories
+  #
+  link_libraries(
+    ${LIBEV_LIBRARIES}
+    ${OPENSSL_CRYPTO_LIBRARY}
+    ${OPENSSL_SSL_LIBRARY}
+    ${LIBXML2_LIBRARIES}
+  )
+
 else()
 
   add_compile_options(-D_XOPEN_SOURCE=700)
