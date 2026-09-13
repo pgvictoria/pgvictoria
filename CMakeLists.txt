@@ -147,6 +147,18 @@ find_package(Pandoc)
 
 if (PANDOC_FOUND)
   message(STATUS "pandoc found: ${PANDOC_EXECUTABLE}")
+else ()
+  set(DOCS FALSE)
+  message(STATUS "pandoc needed. The generation process will be skipped.")
+endif()
+
+find_package(Xelatex)
+
+if (XELATEX_FOUND)
+  message(STATUS "xelatex found: ${XELATEX_EXECUTABLE}")
+else ()
+  set(DOCS FALSE)
+  message(STATUS "xelatex needed. The generation process will be skipped.")
 endif()
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/src/")

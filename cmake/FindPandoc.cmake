@@ -30,7 +30,7 @@ if(PANDOC_FOUND)
     message(STATUS "Found eisvogel template at ${EISVOGEL_TEMPLATE_PATH}")
   else()
     message(STATUS "eisvogel template not found at ${EISVOGEL_TEMPLATE_PATH}. The generation process will be skipped.")
-    set(generation FALSE)
+    set(DOCS FALSE PARENT_SCOPE)
   endif()
 
 endif()
