@@ -31,6 +31,7 @@
 #include <utils.h>
 
 #include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -172,6 +173,69 @@ MCTF_TEST(test_utils_append_double)
 
    s = pgvictoria_append_double_precision(NULL, 3.14159, 3);
    MCTF_ASSERT_STR_EQ(s, "3.142", cleanup, "append_double_precision wrong for 3.14159");
+
+cleanup:
+   free(s);
+   MCTF_FINISH();
+}
+
+MCTF_TEST(test_utils_append_double_special_values)
+{
+   char* s = NULL;
+
+   /* format_and_append sizes its buffer with vsnprintf(NULL, 0, ...) before
+      formatting. NAN and INFINITY are the one input class where a naive
+      length precomputation could plausibly disagree with the C library
+      between the sizing pass and the write pass. */
+   s = pgvictoria_append_double(NULL, NAN);
+   MCTF_ASSERT_PTR_NONNULL(s, cleanup, "append_double returned NULL for NAN");
+   MCTF_ASSERT(strstr(s, "nan") != NULL, cleanup, "append_double did not format NAN as nan");
+   free(s);
+   s = NULL;
+
+   s = pgvictoria_append_double(NULL, INFINITY);
+   MCTF_ASSERT_PTR_NONNULL(s, cleanup, "append_double returned NULL for INFINITY");
+   MCTF_ASSERT(strstr(s, "inf") != NULL, cleanup, "append_double did not format INFINITY as inf");
+   free(s);
+   s = NULL;
+
+   s = pgvictoria_append_double(NULL, -INFINITY);
+   MCTF_ASSERT_PTR_NONNULL(s, cleanup, "append_double returned NULL for -INFINITY");
+   MCTF_ASSERT(strstr(s, "-inf") != NULL, cleanup, "append_double did not format -INFINITY as -inf");
+   free(s);
+   s = NULL;
+
+   s = pgvictoria_append_double(NULL, -1e19);
+   MCTF_ASSERT_PTR_NONNULL(s, cleanup, "append_double returned NULL for -1e19");
+   MCTF_ASSERT_STR_EQ(s, "-10000000000000000000.000000", cleanup, "append_double wrong for -1e19");
+
+cleanup:
+   free(s);
+   MCTF_FINISH();
+}
+
+MCTF_TEST(test_utils_append_bool)
+{
+   char* s = NULL;
+
+   /* pgvictoria_append_bool renders "1"/"0", not "true"/"false" like the
+      sibling projects (pgmoneta, pgagroal) -- this pins the actual current
+      behavior, it is not asserting that shape is the intended one. */
+   s = pgvictoria_append_bool(NULL, false);
+   MCTF_ASSERT_PTR_NONNULL(s, cleanup, "append_bool returned NULL for false");
+   MCTF_ASSERT_STR_EQ(s, "0", cleanup, "append_bool wrong for false");
+   free(s);
+   s = NULL;
+
+   s = pgvictoria_append_bool(NULL, true);
+   MCTF_ASSERT_STR_EQ(s, "1", cleanup, "append_bool wrong for true");
+   free(s);
+   s = NULL;
+
+   s = pgvictoria_append_bool(NULL, true);
+   s = pgvictoria_append_char(s, ' ');
+   s = pgvictoria_append_bool(s, false);
+   MCTF_ASSERT_STR_EQ(s, "1 0", cleanup, "append_bool did not concatenate");
 
 cleanup:
    free(s);
