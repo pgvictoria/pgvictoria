@@ -655,7 +655,7 @@ add_user(char* users_path, char* username, char* password, bool generate_pwd, in
    int number_of_users = 0;
    bool do_verify = true;
    char* verify = NULL;
-   bool do_free = true;
+   bool do_free = false;
    struct json* j = NULL;
    struct json* outcome = NULL;
    struct json* response = NULL;
@@ -1021,7 +1021,7 @@ update_user(char* users_path, char* username, char* password, bool generate_pwd,
    bool found = false;
    bool do_verify = true;
    char* verify = NULL;
-   bool do_free = true;
+   bool do_free = false;
    struct json* j = NULL;
    struct json* outcome = NULL;
    struct json* response = NULL;
