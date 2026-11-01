@@ -14,6 +14,7 @@ Sakshi Aggarwal <sakshiaggarwal2706@gmail.com>
 Ali Sayed <aliabdelrahman2005@gmail.com>
 R Sai Pranav <rajasaipranav0@gmail.com>
 youssef-joe <joe92228@gmail.com>
+Salma Abdelhady <salma.abdelhadyx@gmail.com>
 ```
 
 ## Contributing

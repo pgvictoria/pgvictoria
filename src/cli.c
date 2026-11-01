@@ -32,6 +32,7 @@
 #include <logging.h>
 #include <memory.h>
 #include <report.h>
+#include <suggest.h>
 #include <postgresql.h>
 #include <shmem.h>
 #include <utils.h>
@@ -41,9 +42,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define ACTION_UNKNOWN  0
 #define ACTION_REPORT   1
+#define ACTION_SUGGEST  2
 #define ACTION_CONF_GET 3
 #define ACTION_CONF_SET 4
 #define ACTION_CONF_DEL 5
@@ -93,10 +96,13 @@ usage(void)
    printf("\n");
    printf("Usage:\n");
    printf("  pgvictoria-cli [ OPTIONS ] report [ CONFIG_FILE ]\n");
+   printf("  pgvictoria-cli [ OPTIONS ] suggest \n");
    printf("\n");
    printf("Commands:\n");
    printf("  report                       Generate a configuration report against the version baseline\n");
    printf("                                 no arguments  - scan the live server (online mode)\n");
+   printf("  suggest                      Suggest postgresql.conf parameters\n");
+   printf("\n");
    printf("                                 CONFIG_FILE   - compare a postgresql.conf file (offline mode)\n");
    printf("  conf get <file> <section> <key>\n");
    printf("                               Get a configuration value\n");
@@ -113,6 +119,8 @@ usage(void)
    printf("  -P, --port PORT               Set the PostgreSQL port (default: 5432)\n");
    printf("  -U, --user USER               Set the database user (default: postgres)\n");
    printf("  -W, --password PASSWORD       Set the database password\n");
+   printf("  -w, --workload WORKLOAD       Workload type: oltp|dw|mixed|desktop|web (default: general)\n");
+   printf("  -M, --max-connections         Maximun connections (default: 100)\n");
    printf("  -pg, --postgresql VERSION     Override the baseline version to compare against (14-19)\n");
    printf("  -f, --format FORMAT           Report format: text|html|md (default: auto-detected from output file extension, fallback: text)\n");
    printf("  -t, --type TYPE               Report type: full|changed (default: changed)\n");
@@ -145,6 +153,9 @@ main(int argc, char** argv)
    bool format_specified = false;
    enum pgvictoria_report_type report_type = PGVICTORIA_REPORT_CHANGED;
    char* output_file = NULL;
+   enum pgvictoria_db_workload_type workload = PGVICTORIA_DB_WORKLOAD_TYPE_GENERAL;
+   int max_connections = 100;
+   bool user_provided = false;
 
    cli_option options[] = {
       {"c", "config", true},
@@ -156,6 +167,8 @@ main(int argc, char** argv)
       {"P", "port", true},
       {"U", "user", true},
       {"W", "password", true},
+      {"w", "workload", true},
+      {"M", "max-connections", true},
       {"pg", "postgresql", true},
       {"f", "format", true},
       {"t", "type", true},
@@ -170,6 +183,14 @@ main(int argc, char** argv)
          .action = ACTION_REPORT,
          .deprecated = false,
          .log_message = "report",
+      },
+      {
+         .command = "suggest",
+         .subcommand = "",
+         .accepted_argument_count = {0, 0},
+         .action = ACTION_SUGGEST,
+         .deprecated = false,
+         .log_message = "suggest",
       },
       {
          .command = "conf",
@@ -264,6 +285,44 @@ main(int argc, char** argv)
       else if (!strcmp(optname, "W") || !strcmp(optname, "password"))
       {
          password = optarg;
+      }
+      else if (!strcmp(optname, "w") || !strcmp(optname, "workload"))
+      {
+         if (!strcmp(optarg, "oltp"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_OLTP;
+         }
+         else if (!strcmp(optarg, "web"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_WEB;
+         }
+         else if (!strcmp(optarg, "dw"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_DW;
+         }
+         else if (!strcmp(optarg, "desktop"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_DESKTOP;
+         }
+         else if (!strcmp(optarg, "mixed"))
+         {
+            workload = PGVICTORIA_DB_WORKLOAD_TYPE_MIXED;
+         }
+         else
+         {
+            warnx("pgvictoria-cli: Unsupported workload: %s", optarg);
+            exit(1);
+         }
+      }
+      else if (!strcmp(optname, "M") || !strcmp(optname, "max-connections"))
+      {
+         if (!pgvictoria_is_number(optarg, 10))
+         {
+            warnx("pgvictoria-cli: Invalid max connections: %s", optarg);
+            exit(1);
+         }
+         max_connections = pgvictoria_atoi(optarg);
+         user_provided = true;
       }
       else if (!strcmp(optname, "pg") || !strcmp(optname, "postgresql"))
       {
@@ -514,6 +573,14 @@ main(int argc, char** argv)
          }
       }
    }
+   else if (parsed.cmd->action == ACTION_SUGGEST)
+   {
+      if (pgvictoria_suggest_mode(0, workload, max_connections, user_provided, output_file, output_format))
+      {
+         warnx("pgvictoria-cli: Failed to generate suggest configuration");
+         goto error;
+      }
+   }
    else if (parsed.cmd->action == ACTION_CONF_GET)
    {
       if (pgvictoria_config_get(parsed.args[0], parsed.args[1], parsed.args[2]))
@@ -543,6 +610,7 @@ main(int argc, char** argv)
          exit(1);
       }
    }
+
    else
    {
       warnx("pgvictoria-cli: Unknown action");
