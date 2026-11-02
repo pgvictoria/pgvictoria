@@ -1469,7 +1469,7 @@ pgvictoria_list_directory(char* directory)
             }
             else
             {
-               pgvictoria_log_debug(current);
+               pgvictoria_log_debug("%s", current);
             }
          }
 
@@ -3260,7 +3260,7 @@ pgvictoria_backtrace(void)
 
    if (s != NULL)
    {
-      pgvictoria_log_debug(s);
+      pgvictoria_log_debug("%s", s);
    }
 
    free(s);

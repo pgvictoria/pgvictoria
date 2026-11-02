@@ -193,7 +193,7 @@ pgvictoria_log_error_response_message(struct message* msg)
 
       if (field_type != 'M' && field_type != 'C')
       {
-         pgvictoria_log_debug("error response field type: %c, message: %s", field_type, msg->data + offset);
+         pgvictoria_log_debug("error response field type: %c, message: %s", field_type, (char*)msg->data + offset);
       }
 
       offset += (strlen(msg->data + offset) + 1);
@@ -234,7 +234,7 @@ pgvictoria_log_notice_response_message(struct message* msg)
 
       if (field_type != 'M' && field_type != 'C')
       {
-         pgvictoria_log_debug("notice response field type: %c, message: %s", field_type, msg->data + offset);
+         pgvictoria_log_debug("notice response field type: %c, message: %s", field_type, (char*)msg->data + offset);
       }
 
       offset += (strlen(msg->data + offset) + 1);

@@ -975,7 +975,7 @@ pgvictoria_get_file_size(char* file_path);
  * @return The resulting string
  */
 char*
-pgvictoria_format_and_append(char* buf, char* format, ...);
+pgvictoria_format_and_append(char* buf, char* format, ...) __attribute__((format(printf, 2, 3)));
 
 /**
  * Wrapper for the atoi() function, which provides NULL input check
