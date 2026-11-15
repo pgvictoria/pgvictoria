@@ -32,9 +32,11 @@
 #include <mctf.h>
 #include <tscommon.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 MCTF_TEST(test_configuration_indented_lines)
@@ -112,7 +114,7 @@ MCTF_TEST(test_configuration_large_file)
 
    /* Verify original key is still intact and new_key is gone */
    MCTF_ASSERT_INT_EQ(pgvictoria_config_get(path, "general", "key"), 0, cleanup, "original key missing after del");
-   MCTF_ASSERT_INT_NE(pgvictoria_config_get(path, "general", "new_key"), 0, cleanup, "deleted key should not be found");
+   MCTF_ASSERT(pgvictoria_config_get(path, "general", "new_key") != 0, cleanup, "deleted key should not be found");
 
    /* Verify line count after deletion: 8302 lines */
    f = fopen(path, "r");
@@ -131,6 +133,131 @@ cleanup:
    {
       fclose(f);
    }
+   unlink(path);
+   MCTF_FINISH();
+}
+
+MCTF_TEST(test_configuration_write_failure)
+{
+   char* path = "test_configuration_write_failure.conf";
+   char tmp_path[1024];
+   FILE* f = NULL;
+   char line_buf[1024];
+   bool found_key = false;
+
+   snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
+
+   /* 1. Setup initial configuration file */
+   f = fopen(path, "w");
+   MCTF_ASSERT_PTR_NONNULL(f, cleanup, "could not create %s", path);
+   fprintf(f, "[general]\n");
+   fprintf(f, "key = original_value\n");
+   fclose(f);
+   f = NULL;
+
+   /* 2. Failure injection via /dev/full if available (triggers write/flush/sync failure) */
+#ifndef _WIN32
+   if (access("/dev/full", W_OK) == 0)
+   {
+      /* Test pgvictoria_config_set with write failure */
+      unlink(tmp_path);
+      MCTF_ASSERT_INT_EQ(symlink("/dev/full", tmp_path), 0, cleanup, "could not create symlink to /dev/full");
+
+      MCTF_ASSERT(pgvictoria_config_set(path, "general", "key", "modified_value", NULL) != 0, cleanup,
+                  "config_set should return error on write failure");
+
+      /* Verify original file was not modified or truncated */
+      f = fopen(path, "r");
+      MCTF_ASSERT_PTR_NONNULL(f, cleanup, "original file missing after failed config_set");
+      found_key = false;
+      while (fgets(line_buf, sizeof(line_buf), f) != NULL)
+      {
+         if (strstr(line_buf, "key = original_value") != NULL)
+         {
+            found_key = true;
+         }
+      }
+      fclose(f);
+      f = NULL;
+      MCTF_ASSERT(found_key, cleanup, "original configuration was corrupted or modified after failed config_set");
+
+      /* Test pgvictoria_config_del with write failure */
+      unlink(tmp_path);
+      MCTF_ASSERT_INT_EQ(symlink("/dev/full", tmp_path), 0, cleanup, "could not create symlink to /dev/full");
+
+      MCTF_ASSERT(pgvictoria_config_del(path, "general", "key") != 0, cleanup,
+                  "config_del should return error on write failure");
+
+      /* Verify original file was not modified or truncated */
+      f = fopen(path, "r");
+      MCTF_ASSERT_PTR_NONNULL(f, cleanup, "original file missing after failed config_del");
+      found_key = false;
+      while (fgets(line_buf, sizeof(line_buf), f) != NULL)
+      {
+         if (strstr(line_buf, "key = original_value") != NULL)
+         {
+            found_key = true;
+         }
+      }
+      fclose(f);
+      f = NULL;
+      MCTF_ASSERT(found_key, cleanup, "original configuration was corrupted or deleted after failed config_del");
+   }
+#endif
+
+   /* 3. Failure injection via unopenable temp path (directory at tmp_path) */
+   unlink(tmp_path);
+#ifndef _WIN32
+   mkdir(tmp_path, 0700);
+#else
+   mkdir(tmp_path);
+#endif
+
+   MCTF_ASSERT(pgvictoria_config_set(path, "general", "key", "modified_value", NULL) != 0, cleanup,
+               "config_set should return error when temp file cannot be opened");
+
+   /* Verify original file remains intact */
+   f = fopen(path, "r");
+   MCTF_ASSERT_PTR_NONNULL(f, cleanup, "original file missing after failed fopen in config_set");
+   found_key = false;
+   while (fgets(line_buf, sizeof(line_buf), f) != NULL)
+   {
+      if (strstr(line_buf, "key = original_value") != NULL)
+      {
+         found_key = true;
+      }
+   }
+   fclose(f);
+   f = NULL;
+   MCTF_ASSERT(found_key, cleanup, "original configuration was corrupted after failed fopen in config_set");
+
+   MCTF_ASSERT(pgvictoria_config_del(path, "general", "key") != 0, cleanup,
+               "config_del should return error when temp file cannot be opened");
+
+   /* Verify original file remains intact */
+   f = fopen(path, "r");
+   MCTF_ASSERT_PTR_NONNULL(f, cleanup, "original file missing after failed fopen in config_del");
+   found_key = false;
+   while (fgets(line_buf, sizeof(line_buf), f) != NULL)
+   {
+      if (strstr(line_buf, "key = original_value") != NULL)
+      {
+         found_key = true;
+      }
+   }
+   fclose(f);
+   f = NULL;
+   MCTF_ASSERT(found_key, cleanup, "original configuration was corrupted after failed fopen in config_del");
+
+   rmdir(tmp_path);
+
+cleanup:
+   if (f != NULL)
+   {
+      fclose(f);
+   }
+   unlink(tmp_path);
+   rmdir(tmp_path);
    unlink(path);
    MCTF_FINISH();
 }
