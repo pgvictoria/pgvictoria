@@ -31,22 +31,25 @@
 #include <err.h>
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <configuration.h>
 
-#define INPUT_BUFFER_SIZE   1024
-#define MAX_LINE_LENGTH     4096
-#define MAX_LINES           8192
-#define PGVICTORIA_MAX_PATH 1024
-#define MISC_LENGTH         128
+#define INPUT_BUFFER_SIZE     1024
+#define MAX_LINE_LENGTH       4096
+#define INITIAL_LINE_CAPACITY 256
+#define PGVICTORIA_MAX_PATH   1024
+#define MISC_LENGTH           128
 
 /**
  * Prompt the user for input
@@ -576,6 +579,57 @@ error:
 }
 
 /**
+ * Ensure capacity in the lines buffer
+ * @param lines The lines array pointer
+ * @param capacity The current capacity pointer
+ * @param needed The required number of lines
+ * @return 0 upon success, 1 otherwise
+ */
+static int
+ensure_line_capacity(char*** lines, size_t* capacity, size_t needed)
+{
+   char** new_lines = NULL;
+
+   if (*capacity >= needed)
+   {
+      return 0;
+   }
+
+   if (needed > SIZE_MAX / sizeof(*new_lines))
+   {
+      warnx("Requested configuration line capacity exceeds addressable limit");
+      return 1;
+   }
+
+   size_t new_capacity = *capacity == 0 ? INITIAL_LINE_CAPACITY : *capacity;
+   while (new_capacity < needed)
+   {
+      if (new_capacity > (SIZE_MAX / sizeof(*new_lines)) / 2)
+      {
+         new_capacity = needed;
+         break;
+      }
+      new_capacity *= 2;
+   }
+
+   if (new_capacity > SIZE_MAX / sizeof(*new_lines))
+   {
+      new_capacity = needed;
+   }
+
+   new_lines = (char**)realloc(*lines, new_capacity * sizeof(*new_lines));
+   if (new_lines == NULL)
+   {
+      warn("Could not allocate memory for configuration lines");
+      return 1;
+   }
+
+   *lines = new_lines;
+   *capacity = new_capacity;
+   return 0;
+}
+
+/**
  * Set a configuration value
  * @param file_path The file path
  * @param section The section
@@ -588,32 +642,53 @@ int
 pgvictoria_config_set(const char* file_path, const char* section, const char* key, const char* value, const char* comment)
 {
    FILE* file = NULL;
-   char* lines[MAX_LINES];
-   int line_count = 0;
+   char** lines = NULL;
+   size_t line_capacity = 0;
+   size_t line_count = 0;
    char line_buf[MAX_LINE_LENGTH];
    char section_header[MISC_LENGTH];
-   int section_start = -1;
-   int section_end = -1;
-   int key_line = -1;
+   ssize_t section_start = -1;
+   ssize_t section_end = -1;
+   ssize_t key_line = -1;
    bool key_found = false;
    bool section_found = false;
+   char tmp_path[PGVICTORIA_MAX_PATH];
 
-   memset(lines, 0, sizeof(lines));
-
+   memset(tmp_path, 0, sizeof(tmp_path));
    snprintf(section_header, sizeof(section_header), "[%s]", section);
 
    file = fopen(file_path, "r");
    if (file != NULL)
    {
-      while (fgets(line_buf, sizeof(line_buf), file) != NULL && line_count < MAX_LINES)
+      while (fgets(line_buf, sizeof(line_buf), file) != NULL)
       {
-         lines[line_count++] = strdup(line_buf);
+         if (line_count == SIZE_MAX)
+         {
+            warnx("Configuration file exceeds maximum supported line count");
+            goto error;
+         }
+         if (ensure_line_capacity(&lines, &line_capacity, line_count + 1))
+         {
+            goto error;
+         }
+         lines[line_count] = strdup(line_buf);
+         if (lines[line_count] == NULL)
+         {
+            warn("Could not allocate memory for configuration line");
+            goto error;
+         }
+         line_count++;
+      }
+      if (ferror(file))
+      {
+         warn("Error reading configuration file: %s", file_path);
+         goto error;
       }
       fclose(file);
       file = NULL;
    }
 
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       char temp[MAX_LINE_LENGTH];
       strcpy(temp, lines[i]);
@@ -635,16 +710,16 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
          if (!strcmp(trimmed, section_header))
          {
             section_found = true;
-            section_start = i;
-            section_end = line_count;
+            section_start = (ssize_t)i;
+            section_end = (ssize_t)line_count;
          }
-         else if (section_found && section_end == line_count)
+         else if (section_found && section_end == (ssize_t)line_count)
          {
-            section_end = i;
+            section_end = (ssize_t)i;
          }
       }
 
-      if (section_found && !key_found && i > section_start && (section_end == line_count || i < section_end))
+      if (section_found && !key_found && (ssize_t)i > section_start && (section_end == (ssize_t)line_count || (ssize_t)i < section_end))
       {
          char key_temp[MAX_LINE_LENGTH];
          strcpy(key_temp, lines[i]);
@@ -659,7 +734,7 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
                if (!strcmp(found_key, key))
                {
                   key_found = true;
-                  key_line = i;
+                  key_line = (ssize_t)i;
                }
             }
          }
@@ -668,7 +743,7 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
 
    if (key_found)
    {
-      free(lines[key_line]);
+      char* old_line = lines[key_line];
       char new_line[MAX_LINE_LENGTH];
       if (comment != NULL && strlen(comment) > 0)
       {
@@ -678,51 +753,94 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
       {
          snprintf(new_line, sizeof(new_line), "%s = %s\n", key, value);
       }
-      lines[key_line] = strdup(new_line);
+      char* dup_line = strdup(new_line);
+      if (dup_line == NULL)
+      {
+         warn("Could not allocate memory for configuration line");
+         goto error;
+      }
+      free(old_line);
+      lines[key_line] = dup_line;
    }
    else if (section_found)
    {
-      int insert_at = section_end;
-      for (int i = section_end - 1; i > section_start; i--)
+      if (line_count == SIZE_MAX)
+      {
+         warnx("Configuration file exceeds maximum supported line count");
+         goto error;
+      }
+      if (ensure_line_capacity(&lines, &line_capacity, line_count + 1))
+      {
+         goto error;
+      }
+      char new_line[MAX_LINE_LENGTH];
+      if (comment != NULL && strlen(comment) > 0)
+      {
+         snprintf(new_line, sizeof(new_line), "%s = %s # %s\n", key, value, comment);
+      }
+      else
+      {
+         snprintf(new_line, sizeof(new_line), "%s = %s\n", key, value);
+      }
+      char* dup_line = strdup(new_line);
+      if (dup_line == NULL)
+      {
+         warn("Could not allocate memory for configuration line");
+         goto error;
+      }
+      size_t insert_at = (size_t)section_end;
+      for (ssize_t i = section_end - 1; i > section_start; i--)
       {
          char check_temp[MAX_LINE_LENGTH];
          strcpy(check_temp, lines[i]);
          if (trim(check_temp)[0] != '\0')
          {
-            insert_at = i + 1;
+            insert_at = (size_t)(i + 1);
             break;
          }
       }
-      for (int i = line_count; i > insert_at; i--)
+      for (size_t i = line_count; i > insert_at; i--)
       {
          lines[i] = lines[i - 1];
       }
-      char new_line[MAX_LINE_LENGTH];
-      if (comment != NULL && strlen(comment) > 0)
-      {
-         snprintf(new_line, sizeof(new_line), "%s = %s # %s\n", key, value, comment);
-      }
-      else
-      {
-         snprintf(new_line, sizeof(new_line), "%s = %s\n", key, value);
-      }
-      lines[insert_at] = strdup(new_line);
+      lines[insert_at] = dup_line;
       line_count++;
    }
    else
    {
+      if (line_count > SIZE_MAX - 3)
+      {
+         warnx("Configuration file exceeds maximum supported line count");
+         goto error;
+      }
+      if (ensure_line_capacity(&lines, &line_capacity, line_count + 3))
+      {
+         goto error;
+      }
       if (line_count > 0 && strlen(lines[line_count - 1]) > 0 && lines[line_count - 1][strlen(lines[line_count - 1]) - 1] == '\n')
       {
          char last_line[MAX_LINE_LENGTH];
          strcpy(last_line, lines[line_count - 1]);
          if (trim(last_line)[0] != '\0')
          {
-            lines[line_count++] = strdup("\n");
+            lines[line_count] = strdup("\n");
+            if (lines[line_count] == NULL)
+            {
+               warn("Could not allocate memory for configuration line");
+               goto error;
+            }
+            line_count++;
          }
       }
       char new_section[MISC_LENGTH];
       snprintf(new_section, sizeof(new_section), "[%s]\n", section);
-      lines[line_count++] = strdup(new_section);
+      lines[line_count] = strdup(new_section);
+      if (lines[line_count] == NULL)
+      {
+         warn("Could not allocate memory for configuration line");
+         goto error;
+      }
+      line_count++;
       char new_line[MAX_LINE_LENGTH];
       if (comment != NULL && strlen(comment) > 0)
       {
@@ -732,26 +850,49 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
       {
          snprintf(new_line, sizeof(new_line), "%s = %s\n", key, value);
       }
-      lines[line_count++] = strdup(new_line);
+      lines[line_count] = strdup(new_line);
+      if (lines[line_count] == NULL)
+      {
+         warn("Could not allocate memory for configuration line");
+         goto error;
+      }
+      line_count++;
    }
 
-   char tmp_path[PGVICTORIA_MAX_PATH];
    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", file_path);
    file = fopen(tmp_path, "w");
    if (file == NULL)
    {
+      tmp_path[0] = '\0';
       warn("Could not open temp file");
       goto error;
    }
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
-      fputs(lines[i], file);
+      if (fputs(lines[i], file) == EOF)
+      {
+         warn("Could not write configuration line to %s", tmp_path);
+         goto error;
+      }
    }
-   fflush(file);
+   if (fflush(file) != 0)
+   {
+      warn("Could not flush temporary configuration file %s", tmp_path);
+      goto error;
+   }
 #ifndef _WIN32
-   fsync(fileno(file));
+   if (fsync(fileno(file)) != 0)
+   {
+      warn("Could not sync temporary configuration file %s", tmp_path);
+      goto error;
+   }
 #endif
-   fclose(file);
+   if (fclose(file) != 0)
+   {
+      file = NULL;
+      warn("Could not close temporary configuration file %s", tmp_path);
+      goto error;
+   }
    file = NULL;
 
    chmod(tmp_path, S_IRUSR | S_IWUSR);
@@ -760,25 +901,32 @@ pgvictoria_config_set(const char* file_path, const char* section, const char* ke
    {
       warn("Could not rename %s to %s", tmp_path, file_path);
       unlink(tmp_path);
+      tmp_path[0] = '\0';
       goto error;
    }
 
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       free(lines[i]);
    }
+   free(lines);
    return 0;
 
 error:
    if (file != NULL)
    {
       fclose(file);
+      file = NULL;
+   }
+   if (tmp_path[0] != '\0')
+   {
       unlink(tmp_path);
    }
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       free(lines[i]);
    }
+   free(lines);
    return 1;
 }
 
@@ -793,17 +941,19 @@ int
 pgvictoria_config_del(const char* file_path, const char* section, const char* key)
 {
    FILE* file = NULL;
-   char* lines[MAX_LINES];
-   int line_count = 0;
+   char** lines = NULL;
+   size_t line_capacity = 0;
+   size_t line_count = 0;
    char line_buf[MAX_LINE_LENGTH];
    char section_header[MISC_LENGTH];
-   int section_start = -1;
-   int section_end = -1;
-   int key_line = -1;
+   ssize_t section_start = -1;
+   ssize_t section_end = -1;
+   ssize_t key_line = -1;
    bool section_found = false;
    bool key_found = false;
+   char tmp_path[PGVICTORIA_MAX_PATH];
 
-   memset(lines, 0, sizeof(lines));
+   memset(tmp_path, 0, sizeof(tmp_path));
    snprintf(section_header, sizeof(section_header), "[%s]", section);
 
    file = fopen(file_path, "r");
@@ -812,14 +962,34 @@ pgvictoria_config_del(const char* file_path, const char* section, const char* ke
       warnx("Could not open file: %s", file_path);
       goto error;
    }
-   while (fgets(line_buf, sizeof(line_buf), file) != NULL && line_count < MAX_LINES)
+   while (fgets(line_buf, sizeof(line_buf), file) != NULL)
    {
-      lines[line_count++] = strdup(line_buf);
+      if (line_count == SIZE_MAX)
+      {
+         warnx("Configuration file exceeds maximum supported line count");
+         goto error;
+      }
+      if (ensure_line_capacity(&lines, &line_capacity, line_count + 1))
+      {
+         goto error;
+      }
+      lines[line_count] = strdup(line_buf);
+      if (lines[line_count] == NULL)
+      {
+         warn("Could not allocate memory for configuration line");
+         goto error;
+      }
+      line_count++;
+   }
+   if (ferror(file))
+   {
+      warn("Error reading configuration file: %s", file_path);
+      goto error;
    }
    fclose(file);
    file = NULL;
 
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       char temp[MAX_LINE_LENGTH];
       strcpy(temp, lines[i]);
@@ -834,15 +1004,15 @@ pgvictoria_config_del(const char* file_path, const char* section, const char* ke
          if (!strcmp(trimmed, section_header))
          {
             section_found = true;
-            section_start = i;
-            section_end = line_count;
+            section_start = (ssize_t)i;
+            section_end = (ssize_t)line_count;
          }
-         else if (section_found && section_end == line_count)
+         else if (section_found && section_end == (ssize_t)line_count)
          {
-            section_end = i;
+            section_end = (ssize_t)i;
          }
       }
-      if (section_found && key != NULL && !key_found && i > section_start && (section_end == line_count || i < section_end))
+      if (section_found && key != NULL && !key_found && (ssize_t)i > section_start && (section_end == (ssize_t)line_count || (ssize_t)i < section_end))
       {
          char key_temp[MAX_LINE_LENGTH];
          strcpy(key_temp, lines[i]);
@@ -857,7 +1027,7 @@ pgvictoria_config_del(const char* file_path, const char* section, const char* ke
                if (!strcmp(found_key, key))
                {
                   key_found = true;
-                  key_line = i;
+                  key_line = (ssize_t)i;
                }
             }
          }
@@ -875,60 +1045,85 @@ pgvictoria_config_del(const char* file_path, const char* section, const char* ke
       goto error;
    }
 
-   char tmp_path[PGVICTORIA_MAX_PATH];
    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", file_path);
    file = fopen(tmp_path, "w");
    if (file == NULL)
    {
+      tmp_path[0] = '\0';
       warn("Could not open temp file");
       goto error;
    }
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       if (key == NULL)
       {
-         if (i >= section_start && i < section_end)
+         if ((ssize_t)i >= section_start && (ssize_t)i < section_end)
          {
             continue;
          }
       }
       else
       {
-         if (i == key_line)
+         if ((ssize_t)i == key_line)
          {
             continue;
          }
       }
-      fputs(lines[i], file);
+      if (fputs(lines[i], file) == EOF)
+      {
+         warn("Could not write configuration line to %s", tmp_path);
+         goto error;
+      }
    }
-   fflush(file);
+   if (fflush(file) != 0)
+   {
+      warn("Could not flush temporary configuration file %s", tmp_path);
+      goto error;
+   }
 #ifndef _WIN32
-   fsync(fileno(file));
+   if (fsync(fileno(file)) != 0)
+   {
+      warn("Could not sync temporary configuration file %s", tmp_path);
+      goto error;
+   }
 #endif
-   fclose(file);
+   if (fclose(file) != 0)
+   {
+      file = NULL;
+      warn("Could not close temporary configuration file %s", tmp_path);
+      goto error;
+   }
    file = NULL;
+
    if (rename(tmp_path, file_path) != 0)
    {
       warn("Could not rename %s to %s", tmp_path, file_path);
       unlink(tmp_path);
+      tmp_path[0] = '\0';
       goto error;
    }
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       free(lines[i]);
    }
+   free(lines);
    return 0;
 
 error:
    if (file != NULL)
    {
       fclose(file);
+      file = NULL;
+   }
+   if (tmp_path[0] != '\0')
+   {
       unlink(tmp_path);
    }
-   for (int i = 0; i < line_count; i++)
+   for (size_t i = 0; i < line_count; i++)
    {
       free(lines[i]);
    }
+   free(lines);
    return 1;
 }
 
