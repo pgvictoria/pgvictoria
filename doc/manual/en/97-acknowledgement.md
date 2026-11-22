@@ -15,6 +15,7 @@ Ali Sayed <aliabdelrahman2005@gmail.com>
 R Sai Pranav <rajasaipranav0@gmail.com>
 youssef-joe <joe92228@gmail.com>
 Salma Abdelhady <salma.abdelhadyx@gmail.com>
+Hardik Kaurani <hardikkaurani1@gmail.com>
 ```
 
 ## Contributing
