@@ -45,6 +45,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/wait.h>
@@ -164,6 +165,11 @@ pgvictoria_bind_unix_socket(char* directory, char* file, int* fd)
 
    config = (struct main_configuration*)shmem;
 
+   if (fd == NULL)
+   {
+      goto error;
+   }
+
    if ((*fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
    {
       pgvictoria_log_error("pgvictoria_bind_unix_socket: socket: %s %s", directory, strerror(errno));
@@ -206,16 +212,32 @@ pgvictoria_bind_unix_socket(char* directory, char* file, int* fd)
       goto error;
    }
 
-   if (listen(*fd, config->backlog) == -1)
+   /* The management socket is unauthenticated, so only the owner may connect */
+   if (chmod(&buf[0], S_IRUSR | S_IWUSR) == -1)
+   {
+      pgvictoria_log_error("pgvictoria_bind_unix_socket: chmod: %s/%s %s", directory, file, strerror(errno));
+      errno = 0;
+      unlink(&buf[0]);
+      goto error;
+   }
+
+   if (listen(*fd, config != NULL ? config->backlog : 5) == -1)
    {
       pgvictoria_log_error("pgvictoria_bind_unix_socket: listen: %s/%s %s", directory, file, strerror(errno));
       errno = 0;
+      unlink(&buf[0]);
       goto error;
    }
 
    return 0;
 
 error:
+
+   if (fd != NULL && *fd != -1)
+   {
+      pgvictoria_disconnect(*fd);
+      *fd = -1;
+   }
 
    return 1;
 }
