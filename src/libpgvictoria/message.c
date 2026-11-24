@@ -1005,6 +1005,7 @@ error:
    pgvictoria_clear_message();
    pgvictoria_free_message(rmsg);
    pgvictoria_memory_dynamic_destroy(data);
+   pgvictoria_free_query_response(r);
 
    free(content);
 
