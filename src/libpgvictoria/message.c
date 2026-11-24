@@ -922,6 +922,12 @@ pgvictoria_query_execute(SSL* ssl, int socket, struct message* msg, struct query
 
       cols = get_number_of_columns(rmsg);
 
+      if (cols < 0 || cols > MAX_NUMBER_OF_COLUMNS)
+      {
+         pgvictoria_log_warn("Invalid number of columns in RowDescription: %d", cols);
+         goto error;
+      }
+
       r->number_of_columns = cols;
 
       for (int i = 0; i < cols; i++)
@@ -931,7 +937,7 @@ pgvictoria_query_execute(SSL* ssl, int socket, struct message* msg, struct query
             goto error;
          }
 
-         memcpy(&r->names[i][0], name, strlen(name));
+         memcpy(&r->names[i][0], name, MIN(strlen(name), (size_t)MISC_LENGTH - 1));
 
          free(name);
          name = NULL;
@@ -999,6 +1005,7 @@ error:
    pgvictoria_clear_message();
    pgvictoria_free_message(rmsg);
    pgvictoria_memory_dynamic_destroy(data);
+   pgvictoria_free_query_response(r);
 
    free(content);
 
