@@ -92,19 +92,19 @@ pgvictoria_ext_slowest_queries(PG_FUNCTION_ARGS)
          ereport(ERROR,
                  (errmsg_internal("pgvictoria_ext_slowest_queries: SPI_execute failed")));
       }
-      
+
       MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
       tupdesc = CreateTemplateTupleDesc(3);
 
       TupleDescInitEntry(
-         tupdesc, (AttrNumber) 1, "database", TEXTOID, -1, 0);
+         tupdesc, (AttrNumber)1, "database", TEXTOID, -1, 0);
 
       TupleDescInitEntry(
-         tupdesc, (AttrNumber) 2, "total_exec_time", FLOAT8OID, -1, 0);
+         tupdesc, (AttrNumber)2, "total_exec_time", FLOAT8OID, -1, 0);
 
       TupleDescInitEntry(
-         tupdesc, (AttrNumber) 3, "query", TEXTOID, -1, 0);
+         tupdesc, (AttrNumber)3, "query", TEXTOID, -1, 0);
 
       funcctx->tuple_desc = BlessTupleDesc(tupdesc);
 
@@ -149,12 +149,159 @@ pgvictoria_ext_slowest_queries(PG_FUNCTION_ARGS)
    funcctx = SRF_PERCALL_SETUP();
 
    {
-      List* rows = (List*) funcctx->user_fctx;
+      List* rows = (List*)funcctx->user_fctx;
       ListCell* cell = list_head(rows);
 
       if (cell != NULL)
       {
-         HeapTuple tuple = (HeapTuple) lfirst(cell);
+         HeapTuple tuple = (HeapTuple)lfirst(cell);
+         Datum result;
+         List* rest;
+
+         result = HeapTupleGetDatum(tuple);
+
+         rest = list_delete_first(rows);
+         funcctx->user_fctx = rest;
+
+         SRF_RETURN_NEXT(funcctx, result);
+      }
+      else
+      {
+         SRF_RETURN_DONE(funcctx);
+      }
+   }
+}
+
+PG_FUNCTION_INFO_V1(pgvictoria_ext_stat_activity);
+
+Datum
+pgvictoria_ext_stat_activity(PG_FUNCTION_ARGS)
+{
+   FuncCallContext* funcctx;
+
+   if (SRF_IS_FIRSTCALL())
+   {
+      TupleDesc tupdesc;
+      MemoryContext oldcontext;
+      SPITupleTable* tuptable;
+      uint64 i;
+      List* rows = NIL;
+
+      funcctx = SRF_FIRSTCALL_INIT();
+
+      oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+      if (SPI_connect() != SPI_OK_CONNECT)
+      {
+         ereport(ERROR,
+                 (errmsg_internal("pgvictoria_ext_activity: SPI_connect failed")));
+      }
+      if (SPI_execute(
+             "SELECT pid, leader_pid, backend_type,"
+             "usename::text, datname::text, application_name,"
+             "client_addr::text, state, query, query_id,"
+             "NOW() - query_start AS query_duration,"
+             "NOW() - xact_start AS transaction_duration,"
+             "wait_event, wait_event_type "
+             "FROM pg_stat_activity ",
+             true, 0) != SPI_OK_SELECT)
+      {
+         SPI_finish();
+
+         ereport(ERROR,
+                 (errmsg_internal("pgvictoria_ext_activity: SPI_execute failed")));
+      }
+
+      MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+      tupdesc = CreateTemplateTupleDesc(14);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)1, "pid", INT4OID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)2, "leader_pid", INT4OID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)3, "backend_type", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)4, "usename", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)5, "datname", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)6, "application_name", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)7, "client_addr", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)8, "state", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)9, "query", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)10, "query_id", INT8OID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)11, "query_duration", INTERVALOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)12, "transaction_duration", INTERVALOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)13, "wait_event", TEXTOID, -1, 0);
+
+      TupleDescInitEntry(
+         tupdesc, (AttrNumber)14, "wait_event_type", TEXTOID, -1, 0);
+
+      funcctx->tuple_desc = BlessTupleDesc(tupdesc);
+
+      tuptable = SPI_tuptable;
+
+      for (i = 0; i < SPI_processed; i++)
+      {
+         HeapTuple spi_tuple;
+         TupleDesc spi_tupdesc;
+         Datum values[14];
+         bool nulls[14] = {false};
+         HeapTuple tuple;
+         bool isnull;
+
+         spi_tuple = tuptable->vals[i];
+         spi_tupdesc = tuptable->tupdesc;
+
+         for (int j = 0; j < 14; j++)
+         {
+            values[j] = SPI_getbinval(
+               spi_tuple, spi_tupdesc, j + 1, &isnull);
+            nulls[j] = isnull;
+         }
+
+         tuple = heap_form_tuple(tupdesc, values, nulls);
+
+         rows = lappend(rows, heap_copytuple(tuple));
+      }
+
+      SPI_finish();
+
+      funcctx->user_fctx = rows;
+
+      MemoryContextSwitchTo(oldcontext);
+   }
+
+   funcctx = SRF_PERCALL_SETUP();
+
+   {
+      List* rows = (List*)funcctx->user_fctx;
+      ListCell* cell = list_head(rows);
+
+      if (cell != NULL)
+      {
+         HeapTuple tuple = (HeapTuple)lfirst(cell);
          Datum result;
          List* rest;
 

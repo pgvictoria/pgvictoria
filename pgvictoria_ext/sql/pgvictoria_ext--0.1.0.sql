@@ -40,3 +40,24 @@ RETURNS TABLE (
 AS 'MODULE_PATHNAME',
    'pgvictoria_ext_slowest_queries'
 LANGUAGE C;
+
+CREATE FUNCTION pgvictoria_ext_stat_activity()
+RETURNS TABLE (
+    pid integer,
+    leader_pid integer,
+    backend_type text,
+    usename text,
+    datname text,
+    application_name text,
+    client_addr text,
+    state text,
+    query text,
+    query_id bigint,
+    query_duration interval,
+    transaction_duration interval,
+    wait_event text,
+    wait_event_type text
+)
+AS 'MODULE_PATHNAME',
+   'pgvictoria_ext_stat_activity'
+LANGUAGE C;
