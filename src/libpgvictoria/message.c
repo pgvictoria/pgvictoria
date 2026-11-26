@@ -945,7 +945,12 @@ pgvictoria_query_execute(SSL* ssl, int socket, struct message* msg, struct query
          {
             struct tuple* dtuple = NULL;
 
-            create_D_tuple(cols, msg, &dtuple);
+            if (create_D_tuple(cols, msg, &dtuple))
+            {
+               pgvictoria_free_message(msg);
+               pgvictoria_free_query_response(r);
+               goto error;
+            }
 
             if (r->tuples == NULL)
             {
@@ -1147,35 +1152,72 @@ create_D_tuple(int number_of_columns, struct message* msg, struct tuple** tuple)
    int length;
    struct tuple* result = NULL;
 
-   result = (struct tuple*)malloc(sizeof(struct tuple));
-   memset(result, 0, sizeof(struct tuple));
+   *tuple = NULL;
 
-   result->data = (char**)malloc(number_of_columns * sizeof(char*));
-   result->next = NULL;
+   result = (struct tuple*)calloc(1, sizeof(struct tuple));
+   if (result == NULL)
+   {
+      goto error;
+   }
+
+   result->data = (char**)calloc(number_of_columns > 0 ? number_of_columns : 1, sizeof(char*));
+   if (result->data == NULL)
+   {
+      goto error;
+   }
 
    offset = 7;
 
    for (int i = 0; i < number_of_columns; i++)
    {
+      /* Every field starts with a 4 byte length, and the data must fit in the message */
+      if ((size_t)offset + 4 > (size_t)msg->length)
+      {
+         pgvictoria_log_warn("DataRow is too short for %d columns", number_of_columns);
+         goto error;
+      }
+
       length = pgvictoria_read_int32(msg->data + offset);
       offset += 4;
 
       if (length > 0)
       {
-         result->data[i] = (char*)malloc(length + 1);
-         memset(result->data[i], 0, length + 1);
+         if ((size_t)length > (size_t)msg->length - (size_t)offset)
+         {
+            pgvictoria_log_warn("DataRow field length %d exceeds the message", length);
+            goto error;
+         }
+
+         result->data[i] = (char*)calloc(1, (size_t)length + 1);
+         if (result->data[i] == NULL)
+         {
+            goto error;
+         }
          memcpy(result->data[i], msg->data + offset, length);
          offset += length;
-      }
-      else
-      {
-         result->data[i] = NULL;
       }
    }
 
    *tuple = result;
 
    return 0;
+
+error:
+
+   if (result != NULL)
+   {
+      if (result->data != NULL)
+      {
+         for (int i = 0; i < number_of_columns; i++)
+         {
+            free(result->data[i]);
+         }
+      }
+      free(result->data);
+      free(result);
+   }
+
+   return 1;
 }
 
 static int
